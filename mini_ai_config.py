@@ -1,18 +1,20 @@
-"""Mini-AI runtime configuration — model presets, voices, and persistent user choice.
+"""Mini-AI runtime configuration — model presets, voices, personalities, and persistent user choice.
 
 Presets bundle a (text_model, vision_model) pair under a friendly name so
 the user can swap performance/quality tradeoffs from a single picker.
 
 Voice profiles map a friendly key to a Piper TTS voice file on disk.
 
+Personalities supply a system prompt that shapes the LLM's character.
+
 Volume gain is a multiplier applied via ffmpeg after Piper synthesis,
 on top of the ALSA hardware volume (which should be set via amixer).
 
 Persistent state lives at ~/.config/mini-ai/config.json. The picker writes
 to it; voice_pipeline.py reads from it on startup. Environment variables
-MINI_AI_TEXT_MODEL / MINI_AI_VISION_MODEL / MINI_AI_VOICE / MINI_AI_VOLUME
-override the file (useful for ad-hoc testing without touching the saved
-choice).
+MINI_AI_TEXT_MODEL / MINI_AI_VISION_MODEL / MINI_AI_VOICE / MINI_AI_VOLUME /
+MINI_AI_PERSONALITY override the file (useful for ad-hoc testing without
+touching the saved choice).
 """
 from __future__ import annotations
 
@@ -63,6 +65,87 @@ PRESETS_BY_KEY: dict[str, Preset] = {p.key: p for p in PRESETS}
 DEFAULT_PRESET_KEY = "fast"
 
 
+# ── Personalities ─────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class Personality:
+    key: str           # internal id, written to config.json
+    label: str         # short name shown in the picker
+    system_prompt: str # injected as the system message on every turn
+
+
+PERSONALITIES: list[Personality] = [
+    Personality(
+        key="assistant",
+        label="Assistant (default)",
+        system_prompt=(
+            "You are Mini-AI, a helpful voice assistant running on a Raspberry Pi. "
+            "Keep your answers concise and spoken-word friendly — no bullet points, "
+            "no markdown, no lists. Just clear, natural sentences."
+        ),
+    ),
+    Personality(
+        key="pirate",
+        label="Pirate",
+        system_prompt=(
+            "You are a friendly pirate assistant. Speak in pirate style — say 'arr', "
+            "'matey', 'ahoy', 'ye', 'aye' and similar expressions naturally throughout "
+            "your answers. Keep answers short and fun. No markdown or lists."
+        ),
+    ),
+    Personality(
+        key="teacher",
+        label="Teacher (kid-friendly)",
+        system_prompt=(
+            "You are a patient, encouraging teacher talking to a young child. "
+            "Use simple words, short sentences, and friendly enthusiasm. "
+            "Explain things with fun examples. No markdown or lists."
+        ),
+    ),
+    Personality(
+        key="robot",
+        label="Robot",
+        system_prompt=(
+            "You are MINI-BOT, a robot assistant. Speak in a slightly robotic style — "
+            "precise, literal, and efficient. Occasionally reference your circuits or "
+            "processing units. Keep answers short. No markdown or lists."
+        ),
+    ),
+    Personality(
+        key="storyteller",
+        label="Storyteller",
+        system_prompt=(
+            "You are a captivating storyteller. Answer every question as if weaving "
+            "a short tale — vivid, imaginative, and engaging. Keep it brief and "
+            "spoken-word friendly. No markdown or lists."
+        ),
+    ),
+    Personality(
+        key="astronaut",
+        label="Astronaut",
+        system_prompt=(
+            "You are Commander Nova, an astronaut speaking from orbit. You see Earth "
+            "below you every 90 minutes. Reference space, microgravity, mission control, "
+            "and the overview effect naturally in your answers. Keep answers concise and "
+            "awe-inspiring. No markdown or lists."
+        ),
+    ),
+    Personality(
+        key="alien",
+        label="Alien Explorer",
+        system_prompt=(
+            "You are Zyx-9, a curious alien explorer from a civilization far outside "
+            "this solar system. You are fascinated by humans and Earth — even ordinary "
+            "things seem wondrous to you. Occasionally misunderstand human customs in an "
+            "endearing way. Keep answers short, warm, and full of wonder. No markdown or lists."
+        ),
+    ),
+]
+
+PERSONALITIES_BY_KEY: dict[str, Personality] = {p.key: p for p in PERSONALITIES}
+DEFAULT_PERSONALITY_KEY = "assistant"
+
+
 # ── Voice profiles ────────────────────────────────────────────────────────────
 
 @dataclass(frozen=True)
@@ -110,6 +193,27 @@ VOICES: list[Voice] = [
         file="en_GB-jenny_dioco-medium",
         gender="F", accent="UK",
         description="British female, more expressive intonation.",
+    ),
+    Voice(
+        key="joe",
+        label="Joe (US male, casual)",
+        file="en_US-joe-medium",
+        gender="M", accent="US",
+        description="Relaxed, conversational US male.",
+    ),
+    Voice(
+        key="danny",
+        label="Danny (US male, warm)",
+        file="en_US-danny-low",
+        gender="M", accent="US",
+        description="Warm US male. Low quality model — fast to synthesize.",
+    ),
+    Voice(
+        key="northern",
+        label="Northern (UK male, distinct)",
+        file="en_GB-northern_english_male-medium",
+        gender="M", accent="UK",
+        description="Distinct Northern English male accent.",
     ),
 ]
 
@@ -212,6 +316,25 @@ def save_voice(voice_key: str) -> None:
     _write_config({"voice": voice_key})
 
 
+def load_personality() -> Personality:
+    """Resolve the active personality from env var, then config file, then default."""
+    env_p = os.environ.get("MINI_AI_PERSONALITY", "").strip().lower()
+    if env_p and env_p in PERSONALITIES_BY_KEY:
+        return PERSONALITIES_BY_KEY[env_p]
+    cfg = _read_config()
+    key = cfg.get("personality", DEFAULT_PERSONALITY_KEY)
+    if key not in PERSONALITIES_BY_KEY:
+        key = DEFAULT_PERSONALITY_KEY
+    return PERSONALITIES_BY_KEY[key]
+
+
+def save_personality(personality_key: str) -> None:
+    """Persist the chosen personality to the config file."""
+    if personality_key not in PERSONALITIES_BY_KEY:
+        raise ValueError(f"Unknown personality: {personality_key!r}. Valid: {list(PERSONALITIES_BY_KEY)}")
+    _write_config({"personality": personality_key})
+
+
 def voice_model_path(voice: Voice) -> str:
     """Absolute path to the .onnx file for a voice."""
     return os.path.join(PIPER_VOICES_DIR, voice.file + ".onnx")
@@ -245,10 +368,11 @@ def _clamp_volume(gain: float) -> float:
 
 
 if __name__ == "__main__":
-    # Quick CLI: print active preset, voice, and volume
+    # Quick CLI: print active preset, voice, personality, and volume
     p = load_preset()
     v = load_voice()
     g = load_volume_gain()
+    per = load_personality()
     print(f"Active preset: {p.key}")
     print(f"  text:   {p.text_model}")
     print(f"  vision: {p.vision_model}")
@@ -256,3 +380,4 @@ if __name__ == "__main__":
     print(f"  file:      {voice_model_path(v)}")
     print(f"  installed: {voice_is_installed(v)}")
     print(f"Volume gain: {g}x ({20*__import__('math').log10(g):+.1f} dB)")
+    print(f"Personality: {per.key} ({per.label})")
