@@ -74,7 +74,7 @@ Before reflashing, verify nothing needs to be saved from the Pi:
 4. Edit Settings:
    - Hostname: `mini-ai-01`
    - Username: `miniai_admin`
-   - Password: *(from 78_keys/mini_ai_01.txt)*
+   - Password: *(Pi admin password from your password manager; setup scripts read it from `.env` via `MINI_AI_PASS`)*
    - Wi-Fi: configured (SSID + password + country US)
    - SSH: enabled with password auth
 5. Write + Verify (30-60 min — do not interrupt)

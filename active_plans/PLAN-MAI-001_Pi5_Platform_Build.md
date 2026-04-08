@@ -106,7 +106,7 @@ Stand up a Raspberry Pi 5 (16GB) as a fully offline, on-device edge AI platform 
    |-----|---------|-------|
    | General | Hostname | `mini-ai-01` |
    | General | Username | `miniai_admin` |
-   | General | Password | *(the password from `78_keys/mini_ai_01.txt`)* |
+   | General | Password | *(the Pi admin password — store in your password manager; the setup scripts read it from `.env` via `MINI_AI_PASS` when needed)* |
    | General | Wi-Fi SSID | *(your network — fill in even if using Ethernet)* |
    | General | Wi-Fi Country | `US` |
    | General | Timezone | `America/New_York` |

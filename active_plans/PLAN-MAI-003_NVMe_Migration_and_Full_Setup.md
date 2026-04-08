@@ -102,7 +102,7 @@ Do this on your **Windows workstation**, not on the Pi.
 3. Click the gear icon for OS customisation:
    - Hostname: `mini-ai-01`
    - Username: `miniai_admin`
-   - Password: from `78_keys/mini_ai_01.txt`
+   - Password: Pi admin password from your password manager (setup scripts read it from `.env` via `MINI_AI_PASS`)
    - Wi-Fi: configured (SSID + password + country US)
    - SSH: **enabled with public-key authentication**
    - Public key: paste contents of `~/.ssh/id_ed25519_mini_ai.pub`
