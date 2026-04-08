@@ -24,9 +24,11 @@ import sys
 import subprocess
 import tempfile
 import os
+import re
 import base64
 import json
 import threading
+import traceback
 import urllib.request
 from dataclasses import dataclass, field
 from queue import Queue, Empty
@@ -37,9 +39,11 @@ import cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mini_ai_config import (
     Voice,
+    Personality,
     load_preset,
     load_voice,
     load_volume_gain,
+    load_personality,
     voice_model_path,
 )
 
@@ -48,8 +52,36 @@ WHISPER_BIN = os.path.join(HOME, "whisper.cpp/build/bin/whisper-cli")
 WHISPER_MODEL = os.path.join(HOME, "whisper.cpp/models/ggml-base.en.bin")
 PIPER_BIN = os.path.join(HOME, "mini-ai/.venv/bin/piper")
 OLLAMA_URL = "http://localhost:11434/api"
-AUDIO_CARD = "default"
 CAMERA_INDEX = 0
+
+# USB audio card is resolved lazily at first use (card number can shift on reboot)
+_audio_card: str | None = None
+
+
+def _find_usb_audio_card() -> str:
+    """Scan ALSA capture devices and return the plughw string for the first
+    USB Audio Device found (excludes HDMI and the C920 webcam's audio).
+    Raises RuntimeError with a diagnostic message if nothing is found.
+    """
+    result = subprocess.run(["arecord", "-l"], capture_output=True, text=True)
+    # Example line: card 2: Device [USB Audio Device], device 0: USB Audio [USB Audio]
+    for line in result.stdout.splitlines():
+        if "USB Audio Device" in line:
+            m = re.match(r"card\s+\d+:\s+(\S+)\s+\[", line)
+            if m:
+                return f"plughw:CARD={m.group(1)},DEV=0"
+    raise RuntimeError(
+        "No USB audio capture device found — is the Yahboom mic plugged in?\n"
+        f"Devices seen by arecord -l:\n{result.stdout or '(none)'}"
+    )
+
+
+def _get_audio_card() -> str:
+    """Return the resolved USB audio card string, detecting it on first call."""
+    global _audio_card
+    if _audio_card is None:
+        _audio_card = _find_usb_audio_card()
+    return _audio_card
 
 VISION_TRIGGERS = [
     "what do you see", "look at", "describe what", "show me", "camera",
@@ -66,13 +98,14 @@ class RuntimeState:
     vision_model: str
     voice: Voice
     volume_gain: float
+    personality: Personality
     lock: threading.Lock = field(default_factory=threading.Lock)
     stop: threading.Event = field(default_factory=threading.Event)
 
-    def snapshot(self) -> tuple[str, str, Voice, float]:
+    def snapshot(self) -> tuple[str, str, Voice, float, Personality]:
         """Read-consistent snapshot of the live values."""
         with self.lock:
-            return self.text_model, self.vision_model, self.voice, self.volume_gain
+            return self.text_model, self.vision_model, self.voice, self.volume_gain, self.personality
 
     def set_voice(self, voice: Voice) -> None:
         with self.lock:
@@ -81,6 +114,10 @@ class RuntimeState:
     def set_volume(self, gain: float) -> None:
         with self.lock:
             self.volume_gain = gain
+
+    def set_personality(self, personality: Personality) -> None:
+        with self.lock:
+            self.personality = personality
 
 
 def make_default_state() -> RuntimeState:
@@ -91,6 +128,7 @@ def make_default_state() -> RuntimeState:
         vision_model=preset.vision_model,
         voice=load_voice(),
         volume_gain=load_volume_gain(),
+        personality=load_personality(),
     )
 
 
@@ -120,7 +158,7 @@ def record_utterance(duration_secs: int = 5) -> str:
     """Record from microphone to a temp WAV file (16kHz mono PCM, ready for Whisper)."""
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     subprocess.run([
-        "arecord", "-D", AUDIO_CARD,
+        "arecord", "-D", _get_audio_card(),
         "-f", "cd", "-t", "wav", "-d", str(duration_secs), tmp.name
     ], check=True, capture_output=True)
     tmp16 = tmp.name.replace(".wav", "_16k.wav")
@@ -159,32 +197,30 @@ def transcribe(wav_path: str) -> str:
     return " ".join(lines)
 
 
-def ask_llm(prompt: str, text_model: str, vision_model: str, image_path: str = None) -> str:
-    """Send prompt to Ollama using the supplied model tags."""
+def ask_llm(prompt: str, text_model: str, vision_model: str,
+            system_prompt: str = "", image_path: str = None) -> str:
+    """Send prompt to Ollama via /api/chat, injecting the system prompt if set."""
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
     if image_path:
         with open(image_path, "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
-        data = json.dumps({
-            "model": vision_model,
-            "messages": [{"role": "user", "content": prompt, "images": [img_b64]}],
-            "stream": False,
-        }).encode()
-        url = f"{OLLAMA_URL}/chat"
+        messages.append({"role": "user", "content": prompt, "images": [img_b64]})
+        model = vision_model
     else:
-        data = json.dumps({
-            "model": text_model,
-            "prompt": prompt,
-            "stream": False,
-        }).encode()
-        url = f"{OLLAMA_URL}/generate"
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        messages.append({"role": "user", "content": prompt})
+        model = text_model
+
+    data = json.dumps({"model": model, "messages": messages, "stream": False}).encode()
+    req = urllib.request.Request(
+        f"{OLLAMA_URL}/chat", data=data, headers={"Content-Type": "application/json"}
+    )
     # Vision cold-start can take 5+ minutes on CPU-only Pi 5; text is much faster.
     timeout = 600 if image_path else 300
     resp = urllib.request.urlopen(req, timeout=timeout)
-    result = json.loads(resp.read())
-    if image_path:
-        return result["message"]["content"]
-    return result["response"]
+    return json.loads(resp.read())["message"]["content"]
 
 
 def speak(text: str, voice: Voice, volume_gain: float) -> None:
@@ -214,8 +250,8 @@ def speak(text: str, voice: Voice, volume_gain: float) -> None:
         )
         play_path = amplified_path
 
-    # 3) Play through default ALSA device (configured in ~/.asoundrc)
-    subprocess.run(["aplay", play_path], check=True, capture_output=True)
+    # 3) Play through the Yahboom USB speaker (same card as mic)
+    subprocess.run(["aplay", "-D", _get_audio_card(), play_path], check=True, capture_output=True)
 
     os.unlink(raw_path)
     if amplified_path and amplified_path != raw_path:
@@ -229,14 +265,14 @@ def speak(text: str, voice: Voice, volume_gain: float) -> None:
 
 def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     """One conversation turn — reads live state for every step."""
-    _emit(status_q, "status", "Listening (5s)")
-    wav = record_utterance(5)
+    _emit(status_q, "status", "Listening (10s)")
+    wav = record_utterance(10)
 
     _emit(status_q, "status", "Transcribing")
     user_text = transcribe(wav)
     os.unlink(wav)
 
-    text_model, vision_model, voice, gain = state.snapshot()
+    text_model, vision_model, voice, gain, personality = state.snapshot()
 
     _emit(status_q, "user", user_text)
     if not user_text.strip():
@@ -251,7 +287,11 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
 
     _emit(status_q, "status", "Thinking")
     try:
-        response = ask_llm(user_text, text_model, vision_model, image_path=image_path)
+        response = ask_llm(
+            user_text, text_model, vision_model,
+            system_prompt=personality.system_prompt,
+            image_path=image_path,
+        )
     finally:
         if image_path:
             os.unlink(image_path)
@@ -259,9 +299,11 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     _emit(status_q, "asst", response)
 
     # Re-snapshot voice/gain so a mid-turn GUI change is honored
-    _, _, voice, gain = state.snapshot()
+    _, _, voice, gain, _ = state.snapshot()
     _emit(status_q, "status", "Speaking")
     speak(response, voice, gain)
+    _emit(status_q, "status", "Pausing")
+    state.stop.wait(3.0)   # 3s grace period before listening again
     _emit(status_q, "status", "Idle")
 
 
@@ -276,7 +318,7 @@ def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
             _emit(status_q, "status", "Stopped")
             break
         except Exception as e:
-            _emit(status_q, "error", str(e))
+            _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
             # Brief pause to avoid a tight failure loop
             if state.stop.wait(2.0):
                 break

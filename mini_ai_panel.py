@@ -45,8 +45,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mini_ai_config import (
     VOICES, VOICES_BY_KEY,
+    PERSONALITIES, PERSONALITIES_BY_KEY,
     MIN_VOLUME_GAIN, MAX_VOLUME_GAIN,
-    save_voice, save_volume_gain,
+    save_voice, save_volume_gain, save_personality,
     voice_is_installed,
 )
 from voice_pipeline import (
@@ -112,6 +113,20 @@ class ControlPanel:
         self.voice_combo.pack(side=tk.LEFT, padx=(4, 0), fill=tk.X, expand=True)
         self.voice_combo.bind("<<ComboboxSelected>>", self._on_voice_change)
 
+        # Personality picker (live)
+        personality_row = ttk.Frame(outer)
+        personality_row.pack(fill=tk.X, pady=(8, 4))
+        ttk.Label(personality_row, text="Personality:", width=10).pack(side=tk.LEFT)
+        self.personality_labels = [p.label for p in PERSONALITIES]
+        self.label_to_personality_key = {p.label: p.key for p in PERSONALITIES}
+        self.personality_var = tk.StringVar(value=state.personality.label)
+        self.personality_combo = ttk.Combobox(
+            personality_row, textvariable=self.personality_var,
+            values=self.personality_labels, state="readonly", width=36,
+        )
+        self.personality_combo.pack(side=tk.LEFT, padx=(4, 0), fill=tk.X, expand=True)
+        self.personality_combo.bind("<<ComboboxSelected>>", self._on_personality_change)
+
         # Volume slider (live)
         vol_row = ttk.Frame(outer)
         vol_row.pack(fill=tk.X, pady=(8, 4))
@@ -159,6 +174,14 @@ class ControlPanel:
         self.state.set_voice(voice)
         save_voice(key)
 
+    def _on_personality_change(self, _event=None) -> None:
+        label = self.personality_var.get()
+        key = self.label_to_personality_key.get(label)
+        if not key:
+            return
+        self.state.set_personality(PERSONALITIES_BY_KEY[key])
+        save_personality(key)
+
     def _on_volume_change(self, _value=None) -> None:
         gain = self.vol_var.get() / 100.0
         self.vol_label.config(text=f"{int(self.vol_var.get())}%")
@@ -203,7 +226,8 @@ class ControlPanel:
                 elif kind == "asst":
                     self._set_text(self.asst_text, text)
                 elif kind == "error":
-                    self.status_var.set(f"ERROR: {text[:80]}")
+                    self.status_var.set("ERROR — see assistant box")
+                    self._set_text(self.asst_text, f"ERROR:\n{text}")
         except Empty:
             pass
         # Re-arm
