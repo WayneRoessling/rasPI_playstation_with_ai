@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mini-AI Voice
+Comment=Launch the Mini-AI voice + vision assistant
+Exec=lxterminal --title="Mini-AI Voice" -e /home/miniai_admin/mini-ai/desktop/mini-ai-voice.sh
+Icon=audio-input-microphone
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupNotify=true

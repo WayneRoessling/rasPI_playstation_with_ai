@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mini-AI Model
+Comment=Choose which Mini-AI model preset to use (TINY / FAST / SMART)
+Exec=/home/miniai_admin/mini-ai/.venv/bin/python /home/miniai_admin/mini-ai/desktop/mini-ai-pick-model.py
+Icon=preferences-system
+Terminal=false
+Categories=Settings;
+StartupNotify=true
