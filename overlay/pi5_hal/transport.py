@@ -20,11 +20,34 @@ class WebsocketTransport:
     """Talks to the browser simulator at ws://host:port/hal.
 
     Requires `websocket-client`: pip install websocket-client.
+
+    `connect_timeout` is used only when establishing the connection. Once
+    connected, the socket is set to blocking with no timeout — the rx
+    loop exits only on `close()` or a genuine disconnect. This prevents
+    long idle periods (e.g. while Ollama composes a multi-second reply)
+    from raising `socket.timeout`, which the rx loop's broad `except`
+    would treat as a fatal disconnect and silently kill the receive
+    thread.
+
+    The kwarg name `recv_timeout` is preserved as a backward-compatible
+    alias since some callers (e.g. the scene runner) pass it positionally
+    or by name. Both spellings set the connect timeout.
     """
 
-    def __init__(self, url: str = "ws://127.0.0.1:8765/hal", recv_timeout: float = 5.0):
+    def __init__(
+        self,
+        url: str = "ws://127.0.0.1:8765/hal",
+        recv_timeout: float = 10.0,
+        *,
+        connect_timeout: Optional[float] = None,
+    ):
         self.url = url
-        self.recv_timeout = recv_timeout
+        self.connect_timeout = (
+            connect_timeout if connect_timeout is not None else recv_timeout
+        )
+        # Kept for backward compat — callers that read this still see something
+        # sensible; it now reflects the connect timeout.
+        self.recv_timeout = self.connect_timeout
         self.ws = None
         self._rx_q: queue.Queue[str] = queue.Queue()
         self._stop = threading.Event()
@@ -37,7 +60,11 @@ class WebsocketTransport:
             raise RuntimeError(
                 "websocket-client required: pip install websocket-client"
             ) from e
-        self.ws = create_connection(self.url, timeout=self.recv_timeout)
+        self.ws = create_connection(self.url, timeout=self.connect_timeout)
+        # The connect timeout becomes the default socket timeout for
+        # subsequent recv() calls — turn it off so idle periods don't
+        # tear down the rx thread.
+        self.ws.settimeout(None)
         self._thread = threading.Thread(target=self._rx_loop, daemon=True)
         self._thread.start()
 
