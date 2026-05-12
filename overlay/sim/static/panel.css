@@ -1,0 +1,252 @@
+:root {
+  --bg: #0c0f14;
+  --bg-card: #131820;
+  --bg-card-2: #0f141b;
+  --fg: #c9d1d9;
+  --fg-dim: #6b7480;
+  --accent: #4cc8ff;
+  --warn: #ffb84c;
+  --danger: #ff4c4c;
+  --ok: #4cff9d;
+  --grid-gap: 12px;
+  --radius: 8px;
+  --led-off: #2a3038;
+  --led-on: #ffb84c;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 16px 32px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 system-ui, -apple-system, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 4px 18px;
+  border-bottom: 1px solid #1c232d;
+  margin-bottom: 12px;
+}
+header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.status {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.status.connected    { background: #143a26; color: var(--ok); }
+.status.disconnected { background: #3a1414; color: var(--danger); }
+.status.connecting   { background: #3a2c14; color: var(--warn); }
+.conn { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); }
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.row {
+  display: flex;
+  gap: var(--grid-gap);
+  flex-wrap: wrap;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid #1c232d;
+  border-radius: var(--radius);
+  padding: 12px 14px 14px;
+  flex: 1 1 240px;
+  min-width: 240px;
+}
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+button {
+  background: var(--bg-card-2);
+  color: var(--fg);
+  border: 1px solid #2a323d;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.big {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+button.active { background: #1a2734; border-color: var(--accent); color: var(--accent); }
+button.alert  { background: #2a1414; border-color: var(--danger); color: var(--danger); }
+
+select {
+  background: var(--bg-card-2);
+  color: var(--fg);
+  border: 1px solid #2a323d;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+}
+
+/* ── Switches ───────────────────────────────────────────────────────────── */
+.switch-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+}
+.switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  background: var(--bg-card-2);
+  border: 1px solid #2a323d;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.switch .label { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); }
+.switch .knob {
+  width: 22px; height: 38px;
+  background: #1a2027;
+  border: 1px solid #2a323d;
+  border-radius: 3px;
+  position: relative;
+}
+.switch .knob::after {
+  content: "";
+  position: absolute;
+  left: 2px; right: 2px;
+  height: 14px;
+  bottom: 2px;
+  background: #444;
+  border-radius: 2px;
+  transition: bottom 80ms;
+}
+.switch.on .knob::after {
+  bottom: 20px;
+  background: var(--accent);
+}
+.switch.on { border-color: var(--accent); }
+
+/* ── SFX bank ──────────────────────────────────────────────────────────── */
+.sfx-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.sfx-slot {
+  text-align: center;
+  padding: 8px 4px;
+  background: var(--bg-card-2);
+  border: 1px solid #2a323d;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  transition: background 60ms, border-color 60ms;
+}
+.sfx-slot.fired {
+  background: #1a2734;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sfx-slot .slot-num {
+  font-weight: 700;
+  font-size: 14px;
+}
+.sfx-slot .slot-role {
+  font-size: 9px;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── LED grid ──────────────────────────────────────────────────────────── */
+.led-grid {
+  display: grid;
+  grid-template-columns: repeat(25, 1fr);
+  gap: 4px;
+  max-width: 600px;
+}
+.led {
+  aspect-ratio: 1;
+  background: var(--led-off);
+  border-radius: 50%;
+  border: 1px solid #1c232d;
+  transition: background 50ms, box-shadow 50ms;
+}
+.led.on {
+  background: var(--led-on);
+  box-shadow: 0 0 6px var(--led-on);
+}
+
+/* ── LCD ───────────────────────────────────────────────────────────────── */
+#lcd {
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  background: #142010;
+  color: #8fff60;
+  padding: 8px 10px;
+  border-radius: 3px;
+  border: 1px solid #1c331c;
+  margin: 0;
+  white-space: pre;
+}
+
+/* ── OLED canvases ─────────────────────────────────────────────────────── */
+canvas {
+  background: #000;
+  display: block;
+  border: 1px solid #2a323d;
+  border-radius: 3px;
+  image-rendering: pixelated;
+}
+
+/* ── PTT / PIR ─────────────────────────────────────────────────────────── */
+.ptt-btn.active { background: #143a26; border-color: var(--ok); color: var(--ok); }
+.pir-btn.active { background: #3a2c14; border-color: var(--warn); color: var(--warn); }
+
+/* ── Log ───────────────────────────────────────────────────────────────── */
+.log-card { flex-basis: 100%; }
+#log {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg-card-2);
+  color: var(--fg-dim);
+  padding: 8px 10px;
+  border-radius: 3px;
+  border: 1px solid #2a323d;
+  margin: 0 0 8px;
+  height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+#log .out { color: var(--accent); }
+#log .in  { color: var(--ok); }
+#log .err { color: var(--danger); }
