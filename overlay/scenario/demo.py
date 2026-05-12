@@ -33,6 +33,11 @@ try:
     from .runtime import ScenarioRuntime
     from .test_console import TEST_CONSOLE
     from .space_command_launch import SPACE_COMMAND_LAUNCH
+    from .spaceship_cockpit import SPACESHIP_COCKPIT
+    from .pirate_ship import PIRATE_SHIP
+    from .mars_control_normal import MARS_CONTROL_NORMAL
+    from .mars_control_disaster import MARS_CONTROL_DISASTER
+    from .army_battle_command import ARMY_BATTLE_COMMAND
     from .llm import run_turn, DEFAULT_MODEL, OLLAMA_DEFAULT_URL
 except ImportError:
     import os
@@ -43,6 +48,11 @@ except ImportError:
     from overlay.scenario.runtime import ScenarioRuntime  # type: ignore
     from overlay.scenario.test_console import TEST_CONSOLE  # type: ignore
     from overlay.scenario.space_command_launch import SPACE_COMMAND_LAUNCH  # type: ignore
+    from overlay.scenario.spaceship_cockpit import SPACESHIP_COCKPIT  # type: ignore
+    from overlay.scenario.pirate_ship import PIRATE_SHIP  # type: ignore
+    from overlay.scenario.mars_control_normal import MARS_CONTROL_NORMAL  # type: ignore
+    from overlay.scenario.mars_control_disaster import MARS_CONTROL_DISASTER  # type: ignore
+    from overlay.scenario.army_battle_command import ARMY_BATTLE_COMMAND  # type: ignore
     from overlay.scenario.llm import run_turn, DEFAULT_MODEL, OLLAMA_DEFAULT_URL  # type: ignore
 
 
@@ -51,6 +61,11 @@ except ImportError:
 SCENARIOS = {
     "test_console": TEST_CONSOLE,
     "space_command_launch": SPACE_COMMAND_LAUNCH,
+    "spaceship_cockpit": SPACESHIP_COCKPIT,
+    "pirate_ship": PIRATE_SHIP,
+    "mars_control_normal": MARS_CONTROL_NORMAL,
+    "mars_control_disaster": MARS_CONTROL_DISASTER,
+    "army_battle_command": ARMY_BATTLE_COMMAND,
 }
 
 

@@ -45,11 +45,11 @@ overlay/
 │   └── hardware_modules.yaml       ✓ physical inventory
 ├── narratives/scenarios/           OLENT-style prose narratives
 │   ├── space_command_launch/       ✓ first authored scenario (drop 3)
-│   ├── spaceship_cockpit/          TODO (drop 6)
-│   ├── pirate_ship/                TODO (drop 6)
-│   ├── mars_control_normal/        TODO (drop 6)
-│   ├── mars_control_disaster/      TODO (drop 6)
-│   └── army_battle_command/        TODO (drop 6)
+│   ├── spaceship_cockpit/          ✓ drop 6
+│   ├── pirate_ship/                ✓ drop 6
+│   ├── mars_control_normal/        ✓ drop 6
+│   ├── mars_control_disaster/      ✓ drop 6
+│   └── army_battle_command/        ✓ drop 6
 ├── tools/
 │   ├── generate_sfx.py             ✓ procedural WAV generator
 │   ├── emit_scenarios.py           ✓ narrative → emitted scenario YAML
@@ -133,6 +133,20 @@ cross-reference validator (`tools/validate_canonical.py`), and
 flag-gated overlay integration in `voice_pipeline.py`
 (`MINI_AI_OVERLAY=true`) with PTT-gated recording.
 
+**Drop 6** (shipped): the remaining five authored scenarios —
+Spaceship Cockpit, Pirate Space Ship, Mars Control Center (Normal
+Operations and Disaster Response twin scenarios), and Army Battle
+Command Center — each with a prose narrative, OLENT amendment-discipline
+CHANGELOG, emitted YAML, and Python scenario module with 3
+scenario-specific tools. Drop 6 also lands two Drop-3 polish items:
+**label-aware LED/switch addressing** (the `set_switch_indicator_led`
+tool plus an explicit label → switch → LED map in the system prompt
+so the LLM can light "Main Bus A" rather than guessing LED ids), and
+**true start-on-press / stop-on-release PTT** recording in
+`voice_pipeline.py` (replaces the Drop-3 hard-cap `arecord -d MAX_SECS`
+pattern with subprocess signal management; `MINI_AI_OVERLAY_PTT_MAX`
+stays as a safety cap).
+
 Today you can:
 
 1. **Generate the SFX bank**:
@@ -180,9 +194,11 @@ Today you can:
 | `emit_scenarios.py` narrative → YAML               | ✓ 3 |
 | `validate_canonical.py` cross-refs                 | ✓ 3 |
 | `voice_pipeline.py` integration (PTT-gated, tool-use turn) | ✓ 3 |
+| Scenario authoring for remaining five              | ✓ 6 |
+| Label-aware switch-indicator LED addressing        | ✓ 6 |
+| Start-on-press / stop-on-release PTT recording     | ✓ 6 |
 | Nicla Voice firmware + keyword model               | 4 |
 | Real-HW bring-up (per peripheral)                  | 5–9 |
-| Scenario authoring for remaining five              | 6 |
 | Scripted scene validation harness                  | 7 |
 
 ## OLENT relationship

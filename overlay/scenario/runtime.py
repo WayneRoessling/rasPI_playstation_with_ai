@@ -1,6 +1,7 @@
 """Scenario runtime — Scenario definition + state-aware tool dispatcher."""
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -65,7 +66,19 @@ class ScenarioRuntime:
                 pass
             return f"refused: {name} requires the safety key in ARM (currently SAFE)"
         try:
-            result = tool.execute(self.hal, args or {})
+            # Tools may take either (hal, args) or (hal, args, runtime).
+            # Inspect the signature so existing 2-arg executes keep working
+            # while the new label-aware helpers can opt into the 3-arg form
+            # for access to scenario.switch_labels.
+            try:
+                params = inspect.signature(tool.execute).parameters
+                pass_runtime = len(params) >= 3
+            except (TypeError, ValueError):
+                pass_runtime = False
+            if pass_runtime:
+                result = tool.execute(self.hal, args or {}, self)
+            else:
+                result = tool.execute(self.hal, args or {})
             return result if isinstance(result, str) else "ok"
         except Exception as exc:
             return f"error: {exc}"
@@ -87,6 +100,15 @@ class ScenarioRuntime:
                 f"S{i} ({n})" for i, n in active))
         else:
             lines.append("Active switches: (none)")
+
+        # Explicit label -> switch -> LED map. Switches 1-10 mirror LEDs
+        # 1-10 (canonical/leds.yaml `switch_mirrors` group), so the LED
+        # that "represents" a labelled switch is always the switch's id.
+        # Spelling this out in the system prompt is what makes the LLM
+        # actually light "Main Bus A" rather than guessing LED 6.
+        lines.append("Switch-indicator LED map (S# label -> LED#):")
+        for i, label in enumerate(self.scenario.switch_labels[:10], start=1):
+            lines.append(f"  S{i} {label!r} -> LED {i}")
 
         if state.get("pir"):
             lines.append("PIR motion sensor: triggered")

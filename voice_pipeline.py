@@ -331,14 +331,19 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
 def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
     """Block until PTT press, then record while held; return wav path or None.
 
-    Uses the HAL state mirror's PTT field plus the event queue for edges. If
-    the user holds PTT for ``max_secs`` we cap the recording so a stuck button
-    doesn't pin the mic forever. Returns None if state.stop fires before any
-    press is observed.
+    True start-on-press / stop-on-release: starts ``arecord`` with no
+    ``-d`` (record indefinitely), then terminates the subprocess on PTT
+    release. ``max_secs`` is a *safety cap* that fires only if PTT is
+    still held past the cap — it protects against a stuck button rather
+    than dictating recording length.
+
+    Uses the HAL state mirror's PTT field plus the event queue for edges.
+    Returns the path to a 16 kHz mono WAV ready for Whisper.
     """
+    import time as _time
+
     # Drain any stale ptt event so we react only to a fresh press
     _emit(status_q, "status", "Waiting for PTT")
-    # Wait for press edge
     while True:
         msg = hal.wait_for_event("ptt", timeout=0.5)
         if msg is None:
@@ -349,31 +354,33 @@ def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
     _emit(status_q, "status", "Recording")
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     tmp.close()
-    # Start arecord in background; stop it on PTT release (or max_secs).
-    proc = subprocess.Popen(
-        ["arecord", "-D", _get_audio_card(),
-         "-f", "cd", "-t", "wav", "-d", str(max_secs), tmp.name],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
+    # Open-ended recording: NO -d. We terminate on PTT release.
+    proc = _start_arecord(_get_audio_card(), tmp.name)
+    t0 = _time.monotonic()
+    stop_reason = "release"
     try:
-        # Poll for release. The arecord -d acts as a hard cap.
-        import time as _time
-        t0 = _time.monotonic()
         while True:
+            # State-mirror check is the cheap path
             if hal.state().get("ptt") == 0:
-                # Release observed via state mirror
                 break
+            # Block briefly on the event queue so a race-y release is
+            # caught even if the state mirror update hasn't landed yet
             msg = hal.wait_for_event("ptt", timeout=0.1)
             if msg is not None and int(msg.get("state", 1)) == 0:
                 break
             if _time.monotonic() - t0 > max_secs:
+                stop_reason = "safety_cap"
+                break
+            # arecord died on its own (e.g. audio device unplugged)?
+            if proc.poll() is not None:
+                stop_reason = f"arecord_exited({proc.returncode})"
                 break
     finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=2.0)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        _stop_arecord(proc)
+
+    elapsed = _time.monotonic() - t0
+    _emit(status_q, "status",
+          f"Recorded {elapsed:.1f}s ({stop_reason})")
 
     # Resample to 16 kHz mono for Whisper, same as record_utterance
     tmp16 = tmp.name.replace(".wav", "_16k.wav")
@@ -389,6 +396,34 @@ def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
         except FileNotFoundError:
             pass
     return tmp16
+
+
+def _start_arecord(card: str, out_path: str) -> subprocess.Popen:
+    """Start arecord with no fixed duration — runs until terminated.
+
+    Factored out of ``_record_ptt_gated`` so tests can mock just this
+    function and still exercise the start-on-press / stop-on-release
+    state machine.
+    """
+    return subprocess.Popen(
+        ["arecord", "-D", card, "-f", "cd", "-t", "wav", out_path],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+
+
+def _stop_arecord(proc: subprocess.Popen) -> None:
+    """Terminate an arecord subprocess cleanly; fall back to kill."""
+    if proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=2.0)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        try:
+            proc.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def run_overlay_turn(state: RuntimeState, runtime, history: list,

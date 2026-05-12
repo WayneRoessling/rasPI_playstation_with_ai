@@ -73,7 +73,16 @@ tools:
     requires_arm: false
     referenced_displays: [B, MASTER]
 
-  # ── Scenario-specific ────────────────────────────────────────────────
+  - id: set_switch_indicator_led
+    kind: generic
+    description: |
+      Light the switch-indicator LED corresponding to a named switch
+      (by label or 1-based index). Maps label -> switch id -> LED id
+      (1-10) so the LLM can address switch lights by scenario label
+      ("Main Bus A") rather than raw LED ids. Not arm-gated.
+    requires_arm: false
+
+  # ── Scenario-specific: space_command_launch ──────────────────────────
 
   - id: initiate_launch_sequence
     kind: scenario_specific
@@ -104,3 +113,163 @@ tools:
     sfx_slot_refs: [4]
     referenced_displays: [B]
     used_by: [space_command_launch]
+
+  # ── Scenario-specific: spaceship_cockpit ─────────────────────────────
+
+  - id: engage_warp_drive
+    kind: scenario_specific
+    description: |
+      Engage warp drive. Validates S6 Warp Coil and S7 Impulse are on;
+      plays SFX-COMMS, runs a 5-step LED ramp (LEDs 11-15) with
+      SFX-TICK between each, then SFX-STATUS at lock and LCD = WARP
+      ACTIVE.
+    requires_arm: true
+    sfx_slot_refs: [7, 9, 10]
+    used_by: [spaceship_cockpit]
+
+  - id: scan_sector
+    kind: scenario_specific
+    description: |
+      Sweep long-range sensors. Plays SFX-COMMS, writes SECTOR SCAN +
+      summary on the LCD, renders contact list on OLED B.
+    requires_arm: false
+    sfx_slot_refs: [7]
+    referenced_displays: [B]
+    used_by: [spaceship_cockpit]
+
+  - id: vent_airlock
+    kind: scenario_specific
+    description: |
+      Vent the starboard airlock. Requires S10 Airlock on. Plays
+      SFX-ALARM, lights LEDs 31-40, renders ALERT: VENT on OLED B.
+    requires_arm: true
+    sfx_slot_refs: [4]
+    referenced_displays: [B]
+    used_by: [spaceship_cockpit]
+
+  # ── Scenario-specific: pirate_ship ───────────────────────────────────
+
+  - id: fire_cannon
+    kind: scenario_specific
+    description: |
+      Fire the port broadside. Not arm-gated (pirates are reckless).
+      Plays SFX-ALARM, lights LEDs 31-40, writes FIRE! on the LCD.
+    requires_arm: false
+    sfx_slot_refs: [4]
+    used_by: [pirate_ship]
+
+  - id: raise_jolly_roger
+    kind: scenario_specific
+    description: |
+      Hoist the black flag. Plays SFX-STATUS, lights LED 3 and LEDs
+      21-25 as a pennant rise, writes COLOURS UP on the LCD.
+    requires_arm: false
+    sfx_slot_refs: [10]
+    used_by: [pirate_ship]
+
+  - id: dispense_grog
+    kind: scenario_specific
+    description: |
+      Pour the crew a round. Plays SFX-ACK, writes GROG RATION on
+      the LCD with a rotating toast.
+    requires_arm: false
+    sfx_slot_refs: [1]
+    used_by: [pirate_ship]
+
+  # ── Scenario-specific: mars_control_normal ───────────────────────────
+
+  - id: daily_systems_check
+    kind: scenario_specific
+    description: |
+      Routine 10-step Mars Base systems check. SFX-COMMS once, then
+      SFX-TICK ten times at 1 s intervals while lighting LEDs 11-20,
+      finishes with SFX-ACK and CHECK COMPLETE on the LCD.
+    requires_arm: false
+    sfx_slot_refs: [1, 7, 9]
+    used_by: [mars_control_normal]
+
+  - id: query_resource
+    kind: scenario_specific
+    description: |
+      Read out one named resource (water|oxygen|power|food|crew) to
+      the LCD and OLED B. Plays SFX-ACK.
+    requires_arm: false
+    sfx_slot_refs: [1]
+    referenced_displays: [B]
+    used_by: [mars_control_normal]
+
+  - id: schedule_eva
+    kind: scenario_specific
+    description: |
+      Schedule an EVA. Writes a 3-line plan to OLED B, plays
+      SFX-STATUS.
+    requires_arm: false
+    sfx_slot_refs: [10]
+    referenced_displays: [B]
+    used_by: [mars_control_normal]
+
+  # ── Scenario-specific: mars_control_disaster ─────────────────────────
+
+  - id: evacuate_sector
+    kind: scenario_specific
+    description: |
+      Order evacuation of a named sector (default: all). Plays
+      SFX-ALARM, lights LEDs 31-50, renders EVAC ORDER alert on
+      OLED B, writes EVAC SECTOR on the LCD. Arm-gated.
+    requires_arm: true
+    sfx_slot_refs: [4]
+    referenced_displays: [B]
+    used_by: [mars_control_disaster]
+
+  - id: seal_habitat
+    kind: scenario_specific
+    description: |
+      Seal the named habitat. Defensive action — not arm-gated.
+      Plays SFX-CAUTION, lights habitat LED and LEDs 21-25 as seal
+      progress, writes SEALED hab-N on the LCD.
+    requires_arm: false
+    sfx_slot_refs: [3]
+    used_by: [mars_control_disaster]
+
+  - id: broadcast_mayday
+    kind: scenario_specific
+    description: |
+      Broadcast mayday on the comms array. Plays SFX-COMMS then
+      SFX-ALARM, renders MAYDAY alert on OLED B.
+    requires_arm: false
+    sfx_slot_refs: [4, 7]
+    referenced_displays: [B]
+    used_by: [mars_control_disaster]
+
+  # ── Scenario-specific: army_battle_command ───────────────────────────
+
+  - id: engage_target
+    kind: scenario_specific
+    description: |
+      Engage a tactical target. Validates S3 Weapons Free and S4 ROE
+      Active are on; plays SFX-ALARM, lights LEDs 31-40, writes
+      ENGAGE + target on the LCD. Arm-gated.
+    requires_arm: true
+    sfx_slot_refs: [4]
+    used_by: [army_battle_command]
+
+  - id: request_isr
+    kind: scenario_specific
+    description: |
+      Request ISR overpass. Plays SFX-COMMS, writes ISR REQ on the
+      LCD, renders overpass details on OLED B.
+    requires_arm: false
+    sfx_slot_refs: [7]
+    referenced_displays: [B]
+    used_by: [army_battle_command]
+
+  - id: call_counter_battery
+    kind: scenario_specific
+    description: |
+      Counter-battery fire. Requires S9 Counter-Battery on. Plays
+      SFX-ALARM, lights LEDs 41-50, writes COUNTER-BTRY on the LCD,
+      renders alert on OLED B. Arm-gated.
+    requires_arm: true
+    sfx_slot_refs: [4]
+    referenced_displays: [B]
+    used_by: [army_battle_command]

@@ -49,6 +49,7 @@ scenarios:
       - render_oled_status
       - render_oled_alert
       - render_oled_text
+      - set_switch_indicator_led
       # Scenario-specific tools
       - initiate_launch_sequence
       - hold_countdown
@@ -61,41 +62,184 @@ scenarios:
       - oled_b
       - oled_master
 
-  # The remaining five scenarios are stubs — narratives land in Drop 6.
-  # Listed here so the catalog reflects the full intended set; the
-  # validator skips entries with status != authored.
-
   - id: spaceship_cockpit
     title: Spaceship Cockpit
-    status: planned
+    status: authored
     voice: amy
     narrative_path: narratives/scenarios/spaceship_cockpit/narrative.md
     emitted_path: narratives/scenarios/spaceship_cockpit/_emitted/scenario.yaml
+    default_wake_words:
+      - computer
+      - captain
+    default_intent_allowlist:
+      - status
+      - arm
+      - disarm
+      - help
+    default_tools:
+      - play_sfx
+      - set_led
+      - set_leds_range
+      - clear_leds
+      - write_lcd
+      - clear_lcd
+      - render_oled_status
+      - render_oled_alert
+      - render_oled_text
+      - set_switch_indicator_led
+      - engage_warp_drive
+      - scan_sector
+      - vent_airlock
+    hardware_modules:
+      - rp2040_metro
+      - sim_panel
+      - ch358_sound
+      - lcd_1602
+      - oled_b
+      - oled_master
 
   - id: pirate_ship
     title: Pirate Space Ship
-    status: planned
+    status: authored
     voice: alan
     narrative_path: narratives/scenarios/pirate_ship/narrative.md
     emitted_path: narratives/scenarios/pirate_ship/_emitted/scenario.yaml
+    default_wake_words:
+      - computer
+      - captain
+    default_intent_allowlist:
+      - status
+      - help
+    default_tools:
+      - play_sfx
+      - set_led
+      - set_leds_range
+      - clear_leds
+      - write_lcd
+      - clear_lcd
+      - render_oled_status
+      - render_oled_alert
+      - render_oled_text
+      - set_switch_indicator_led
+      - fire_cannon
+      - raise_jolly_roger
+      - dispense_grog
+    hardware_modules:
+      - rp2040_metro
+      - sim_panel
+      - ch358_sound
+      - lcd_1602
+      - oled_b
+      - oled_master
 
   - id: mars_control_normal
     title: Mars Control Center — Normal Operations
-    status: planned
+    status: authored
     voice: lessac
     narrative_path: narratives/scenarios/mars_control_normal/narrative.md
     emitted_path: narratives/scenarios/mars_control_normal/_emitted/scenario.yaml
+    default_wake_words:
+      - computer
+      - mission_control
+      - flight
+    default_intent_allowlist:
+      - status
+      - arm
+      - disarm
+      - help
+    default_tools:
+      - play_sfx
+      - set_led
+      - set_leds_range
+      - clear_leds
+      - write_lcd
+      - clear_lcd
+      - render_oled_status
+      - render_oled_alert
+      - render_oled_text
+      - set_switch_indicator_led
+      - daily_systems_check
+      - query_resource
+      - schedule_eva
+    hardware_modules:
+      - rp2040_metro
+      - sim_panel
+      - ch358_sound
+      - lcd_1602
+      - oled_b
+      - oled_master
 
   - id: mars_control_disaster
-    title: Mars Control Center — Disaster
-    status: planned
+    title: Mars Control Center — Disaster Response
+    status: authored
     voice: lessac
     narrative_path: narratives/scenarios/mars_control_disaster/narrative.md
     emitted_path: narratives/scenarios/mars_control_disaster/_emitted/scenario.yaml
+    default_wake_words:
+      - computer
+      - mission_control
+      - flight
+    default_intent_allowlist:
+      - abort
+      - status
+      - arm
+      - disarm
+      - help
+    default_tools:
+      - play_sfx
+      - set_led
+      - set_leds_range
+      - clear_leds
+      - write_lcd
+      - clear_lcd
+      - render_oled_status
+      - render_oled_alert
+      - render_oled_text
+      - set_switch_indicator_led
+      - evacuate_sector
+      - seal_habitat
+      - broadcast_mayday
+    hardware_modules:
+      - rp2040_metro
+      - sim_panel
+      - ch358_sound
+      - lcd_1602
+      - oled_b
+      - oled_master
 
   - id: army_battle_command
     title: Army Battle Command Center
-    status: planned
+    status: authored
     voice: ryan
     narrative_path: narratives/scenarios/army_battle_command/narrative.md
     emitted_path: narratives/scenarios/army_battle_command/_emitted/scenario.yaml
+    default_wake_words:
+      - computer
+      - flight
+    default_intent_allowlist:
+      - abort
+      - status
+      - arm
+      - disarm
+      - help
+    default_tools:
+      - play_sfx
+      - set_led
+      - set_leds_range
+      - clear_leds
+      - write_lcd
+      - clear_lcd
+      - render_oled_status
+      - render_oled_alert
+      - render_oled_text
+      - set_switch_indicator_led
+      - engage_target
+      - request_isr
+      - call_counter_battery
+    hardware_modules:
+      - rp2040_metro
+      - sim_panel
+      - ch358_sound
+      - lcd_1602
+      - oled_b
+      - oled_master
