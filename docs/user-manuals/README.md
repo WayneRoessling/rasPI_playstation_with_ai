@@ -1,36 +1,75 @@
 # User Manuals
 
-This folder will hold the **hardware build manual** for the mini-ai system —
+This folder holds the **hardware build manual** for the mini-ai system —
 a step-by-step guide a high-school-aged builder can follow without prior
 electronics experience.
 
-## Current contents
+## How to read it
+
+Read the chapters in order. Each one assumes you've finished the previous
+chapter and that the bench is in the state the previous checkpoint
+described.
+
+| # | Title | Status |
+|---|---|---|
+| 00 | [Welcome & Safety](00_welcome_and_safety.md) | **shipped (Drop 3)** |
+| 01 | [What You Already Have](01_what_you_already_have.md) | **shipped (Drop 3)** |
+| 02 | [The Big Picture of the Control Panel](02_big_picture_of_the_control_panel.md) | **shipped (Drop 3)** |
+| 03 | [Setting Up Your Workspace](03_setting_up_your_workspace.md) | **shipped (Drop 3)** |
+| 04 | [Powering Things](04_powering_things.md) | **shipped (Drop 3)** |
+| 05 | [First Test: the Metro RP2040 Alone](05_first_test_metro_rp2040.md) | stub — Drop 4 |
+| 06 | [The Sound Module (CH358D)](06_sound_module_ch358d.md) | stub — Drop 4 |
+| 07 | [Panel Display A: the 1602 LCD](07_panel_display_a_1602_lcd.md) | stub — Drop 4 |
+| 08 | [Panel Display B + Master: Two OLEDs](08_panel_display_b_two_oleds.md) | stub — Drop 4 |
+| 09 | [Toggle Switches & MCP23017](09_toggle_switches_mcp23017.md) | stub — Drop 4 |
+| 10 | [LEDs & the 74HC595 Shift-Register Chain](10_leds_74hc595_shift_register_chain.md) | stub — Drop 4 |
+| 11 | [PTT, PIR, and the MT-301 Key Switch](11_ptt_pir_mt301_key_switch.md) | stub — Drop 4 |
+| 12 | [The Always-On Ear: Arduino Nicla Voice](12_always_on_ear_nicla_voice.md) | stub — Drop 4 |
+| 13 | [Permanent Build: Soldering, Perfboard, Panel Mounting](13_permanent_build_soldering_perfboard_panel.md) | stub — Drop 4 |
+| 14 | [First Real Run](14_first_real_run.md) | stub — Drop 4 |
+| 15 | [Troubleshooting](15_troubleshooting.md) | stub — Drop 4 |
+
+## Appendices
+
+| ID | Title | Status |
+|---|---|---|
+| A | [Bill of Materials](appendix_A_bill_of_materials.md) | **shipped (Drop 3)** |
+| B | [Pinout Reference Card](appendix_B_pinout_reference_card.md) | stub — Drop 4 |
+| C | [Glossary](appendix_C_glossary.md) | **shipped (Drop 3)** |
+| D | [Going Further](appendix_D_going_further.md) | stub — Drop 4 |
+
+## Planning documents
+
+The plan that drives all chapter content is in [`plan/`](plan/):
 
 - [`plan/BUILD_MANUAL_PLAN.md`](plan/BUILD_MANUAL_PLAN.md) — master plan:
-  who it's for, structure, 16 chapters outlined, open questions.
+  reader profile, 16-chapter outline, 9 locked-in decisions.
 - [`plan/BILL_OF_MATERIALS.md`](plan/BILL_OF_MATERIALS.md) — every part
-  the build needs, split into *already have*, *to procure*, and *optional*.
+  the build needs, split by inventory / procure / optional.
 - [`plan/STYLE_GUIDE.md`](plan/STYLE_GUIDE.md) — tone, callout boxes,
   jargon-introduction rules, diagram conventions.
 - [`plan/DIAGRAM_LIST.md`](plan/DIAGRAM_LIST.md) — every illustration,
-  photograph, and pin-out chart the manual will need.
+  photograph, and pin-out chart the manual will need (57 in total).
 
-## What's not here yet
+## Images
 
-The actual chapters (`01_what_you_already_have.md`,
-`02_big_picture.md`, …) are not yet written. The plan above is the work
-product of this iteration. Once approved, chapters land here one at a
-time so they can be reviewed and revised independently.
+Diagrams and photographs referenced by the chapters (`images/D-0.1.png`,
+etc.) are placeholders until they're produced separately, using Fritzing
+for breadboard views, Inkscape for vector pinouts and analogies, and
+GIMP for annotating in-house photographs. See
+[`plan/DIAGRAM_LIST.md`](plan/DIAGRAM_LIST.md) for the full inventory
+and production order.
 
 ## Status
 
 | Step | Status |
 |---|---|
-| 1. Outline + plan documents          | **done — this commit** |
-| 2. Review / approval                  | pending (feedback welcome) |
-| 3. Chapters 0–4 (orientation + setup) | pending |
-| 4. Chapters 5–12 (per-module build)   | pending |
-| 5. Chapters 13–15 (assemble + run)    | pending |
-| 6. Appendices + diagrams              | pending |
+| 1. Outline + plan documents | done |
+| 2. Review / approval | done |
+| 3. **Chapters 0–4 + Appendices A and C (Drop 3)** | **done — this PR** |
+| 4. Chapters 5–12 + Appendices B (per-module build at the bench) | pending — Drop 4 |
+| 5. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
+| 6. Appendix D + final read-through | pending — Drop 4 |
+| 7. Production of the 57 diagrams and photographs | pending — separate workstream |
 
-Start with [`plan/BUILD_MANUAL_PLAN.md`](plan/BUILD_MANUAL_PLAN.md).
+Start with [`00_welcome_and_safety.md`](00_welcome_and_safety.md).
