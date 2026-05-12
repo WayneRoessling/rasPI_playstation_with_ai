@@ -1,0 +1,65 @@
+# test_console_smoke
+#
+# End-to-end plumbing test for the Drop 7 scene harness. Exercises every
+# step kind (event / utterance / wait / assert) and most assertion
+# varieties (tool_calls_include, leds_on, leds_changed, lcd_line_N,
+# state.*). Assertions are kept loose where an LLM could reasonably
+# vary (exact LCD text, total tool count) so the scene also passes when
+# run under `--mode llm`.
+#
+# This scene defaults to mock mode so CI / quick runs don't need Ollama.
+
+name: "test console smoke — events + tool dispatch"
+scenario: test_console
+mode: mock
+
+setup:
+  key: SAFE
+  switches: {1: on, 2: off, 3: off, 4: off, 5: off, 6: off, 7: off, 8: off, 9: off, 10: off}
+
+steps:
+  # 1. Sanity check the initial state landed.
+  - assert:
+    expect:
+      state.key: SAFE
+      state.switches.0: 1     # S1 on (Main Power)
+      state.switches.1: 0     # S2 off
+      leds_on: []
+      lcd_line_1: ""
+
+  # 2. Flip a switch via an injected event; assert the state mirror
+  #    picks it up. Pure event/state plumbing — no tools involved.
+  - event: {t: switch, id: 2, state: 1}
+    expect:
+      state.switches.1: 1     # S2 (Aux Power) now on
+
+  # 3. Drive the panel through one utterance. In mock mode this dispatches
+  #    the scripted tool calls directly; in LLM mode qwen2.5:14b receives
+  #    the request and decides which tools to call. The assertions check
+  #    only that LEDs 1 and 2 wind up lit — both modes can satisfy that
+  #    in many ways (single set_led calls, set_leds_range, etc.).
+  - utterance: "light LEDs 1 and 2 and play the ack sound"
+    expect:
+      tool_calls_include:
+        - {name: play_sfx, args_contain: {slot: 1}}
+      leds_on: [1, 2]
+      leds_changed: [1, 2]
+
+  # 4. A short wait — nothing should change.
+  - wait: 50
+    expect:
+      leds_changed: []
+
+  # 5. Clear everything and confirm.
+  - utterance: "turn off every LED"
+    expect:
+      leds_on: []
+      leds_changed: [1, 2]
+
+scripted_tool_calls:
+  "light LEDs 1 and 2 and play the ack sound":
+    - {name: play_sfx, args: {slot: 1}}
+    - {name: set_led, args: {id: 1, "on": true}}
+    - {name: set_led, args: {id: 2, "on": true}}
+  "turn off every LED":
+    - {name: clear_leds}

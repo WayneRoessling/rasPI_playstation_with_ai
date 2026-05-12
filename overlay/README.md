@@ -53,7 +53,14 @@ overlay/
 ├── tools/
 │   ├── generate_sfx.py             ✓ procedural WAV generator
 │   ├── emit_scenarios.py           ✓ narrative → emitted scenario YAML
-│   └── validate_canonical.py       ✓ cross-ref consistency check
+│   ├── validate_canonical.py       ✓ cross-ref consistency check
+│   └── run_scenes.py               ✓ scripted scene runner (drop 7)
+├── scenes/                         ✓ scripted scene validation harness (drop 7)
+│   ├── README.md                   ✓ schema + runner UX
+│   └── examples/                   ✓ three example scenes
+│       ├── test_console_smoke.yaml
+│       ├── space_command_armgate.yaml
+│       └── pirate_ship_flavour.yaml
 ├── firmware/rp2040/                CircuitPython firmware (Adafruit Metro)
 │   ├── boot.py                     ✓
 │   ├── code.py                     ✓ main loop
@@ -147,6 +154,21 @@ so the LLM can light "Main Bus A" rather than guessing LED ids), and
 pattern with subprocess signal management; `MINI_AI_OVERLAY_PTT_MAX`
 stays as a safety cap).
 
+**Drop 7** (shipped): the **scripted scene validation harness**
+(`overlay/scenes/`, `overlay/tools/run_scenes.py`). Scene YAML files
+describe initial hardware state + a sequence of stimuli (injected
+events / utterances) + the expected hardware effects. The runner
+drives them against the simulator and asserts pass/fail per step.
+Two modes: `mock` (scripted tool calls, no LLM) for CI-friendly
+plumbing tests, and `llm` (live Ollama tool-use) for end-to-end
+behavioural pinning. Minimal opt-in instrumentation in `pi5_hal/client.py`
+records outgoing commands and mirrors LCD line writes so assertions
+can inspect what the panel was told to do; nothing in the production
+paths reads the new fields. Three example scenes ship:
+`test_console_smoke` (plumbing), `space_command_armgate` (arm-gate
+behaviour), `pirate_ship_flavour` (in-character tool dispatch). See
+[`scenes/README.md`](scenes/README.md) for the schema and runner UX.
+
 Today you can:
 
 1. **Generate the SFX bank**:
@@ -197,9 +219,9 @@ Today you can:
 | Scenario authoring for remaining five              | ✓ 6 |
 | Label-aware switch-indicator LED addressing        | ✓ 6 |
 | Start-on-press / stop-on-release PTT recording     | ✓ 6 |
+| Scripted scene validation harness                  | ✓ 7 |
 | Nicla Voice firmware + keyword model               | 4 |
 | Real-HW bring-up (per peripheral)                  | 5–9 |
-| Scripted scene validation harness                  | 7 |
 
 ## OLENT relationship
 
@@ -215,5 +237,7 @@ with `CHANGELOG.md` amendment discipline per scenario.
 
 Walkthrough-capture (the Playwright UI pipeline in
 `olent-walkthrough-capture/`) doesn't apply — there's no web UI.
-Its analog here is `validate_canonical.py` + the scripted-scene
-harness running against the browser simulator.
+Its analog here is `validate_canonical.py` (static cross-reference
+check, drop 3) + the scripted-scene harness in `scenes/` (dynamic
+behavioural check, drop 7) — both running against the browser
+simulator.
