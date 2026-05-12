@@ -34,7 +34,7 @@ described.
 | ID | Title | Status |
 |---|---|---|
 | A | [Bill of Materials](appendix_A_bill_of_materials.md) | **shipped (Drop 3)** |
-| B | [Pinout Reference Card](appendix_B_pinout_reference_card.md) | stub — Drop 4 |
+| B | [Pinout Reference Card](appendix_B_pinout_reference_card.md) | **shipped** |
 | C | [Glossary](appendix_C_glossary.md) | **shipped (Drop 3)** |
 | D | [Going Further](appendix_D_going_further.md) | stub — Drop 4 |
 
@@ -60,16 +60,26 @@ GIMP for annotating in-house photographs. See
 [`plan/DIAGRAM_LIST.md`](plan/DIAGRAM_LIST.md) for the full inventory
 and production order.
 
+**Shipped so far** (hand-coded SVG → PNG via headless Chromium; sources
+in `source/`, rendered PNGs in `images/`):
+
+| ID    | Diagram                              | Referenced in |
+|-------|--------------------------------------|---------------|
+| D-2.1 | Four-box architecture                | Ch 2          |
+| D-3.1 | Breadboard internal connections      | Ch 3          |
+| D-4.3 | Voltage = water-pressure analogy     | Ch 4          |
+
 ## Status
 
 | Step | Status |
 |---|---|
 | 1. Outline + plan documents | done |
 | 2. Review / approval | done |
-| 3. **Chapters 0–4 + Appendices A and C (Drop 3)** | **done — this PR** |
-| 4. Chapters 5–12 + Appendices B (per-module build at the bench) | pending — Drop 4 |
-| 5. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
-| 6. Appendix D + final read-through | pending — Drop 4 |
-| 7. Production of the 57 diagrams and photographs | pending — separate workstream |
+| 3. **Chapters 0–4 + Appendices A and C (Drop 3)** | done |
+| 4. **Appendix B (Pinout Reference Card) + diagrams D-2.1 / D-3.1 / D-4.3** | **done — this PR** |
+| 5. Chapters 5–12 (per-module build at the bench) | pending — Drop 4 |
+| 6. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
+| 7. Appendix D + final read-through | pending — Drop 4 |
+| 8. Production of the remaining diagrams and photographs | pending — separate workstream |
 
 Start with [`00_welcome_and_safety.md`](00_welcome_and_safety.md).
