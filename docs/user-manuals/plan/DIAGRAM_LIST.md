@@ -128,12 +128,46 @@ Recommended sources:
 | D-12.2 | Photo      | Nicla plugged into the Pi 5 via USB. | TODO |
 | D-12.3 | Screenshot | Pi 5 terminal showing a `wake` event log after saying the wake word. | TODO |
 
-## Chapter 13 — Mounting Onto a Panel
+## Chapter 13 — Permanent Build: Soldering, Perfboard, Panel Mounting
+
+The largest chapter in the manual gets the largest set of figures.
+Split into three groups matching the chapter's sub-sections.
+
+### 13.A — Soldering basics
 
 | ID | Kind | What it shows | Status |
 |---|---|---|---|
-| D-13.1 | Diagram    | Single-page printable panel layout template: positions for 10 toggle switches, PTT, PIR window, 50 LEDs, both OLEDs, the LCD, the MT-301 key. With dimensions. | TODO |
-| D-13.2 | Photo gallery | 2–3 example finished panels in different aesthetics (lab rig, sci-fi cosplay, museum exhibit). | TODO |
+| D-13.0  | Diagram    | Roadmap: the three stages of permanent build — breadboard prototype → perfboard migration → panel mounting — with what carries over between each. | TODO |
+| D-13.1  | Diagram    | Annotated soldering iron — handle, heating element, tip, the brass-wool cleaner, the stand, the lead-free solder spool, the flux. | TODO |
+| D-13.2  | Diagram    | The three rules of a good joint, illustrated as a three-panel comic: (1) heat both parts; (2) feed solder toward the joint, not the iron; (3) remove iron last. | TODO |
+| D-13.3  | Diagram    | Cross-section of a good joint (shiny, volcano-shaped, fillet flowed across the pad) vs a cold joint (dull, lumpy, ball-shaped). Same scale, side by side, with arrows. | TODO |
+| D-13.4  | Photo      | Tinning a fresh iron tip: clean → flux → solder → wipe on brass wool. Series of 4 small shots. | TODO |
+| D-13.5  | Photo      | A practice resistor soldered through a perfboard: top side showing the bent leads, bottom side showing the three joints (1st attempt, 2nd attempt, 3rd attempt) so the reader can see improvement. | TODO |
+| D-13.6  | Photo      | The author's hand position: iron held like a pen, solder fed with the other hand, helping-hands gripping the workpiece. | TODO |
+| D-13.7  | Diagram    | Desoldering with wick (braid laid on joint, iron heats from above, solder wicks into the braid) and with a pump (heat first, lift iron, hit pump). Two-panel. | TODO |
+
+### 13.B — Perfboard migration
+
+| ID | Kind | What it shows | Status |
+|---|---|---|---|
+| D-13.8  | Diagram    | Layout for the **brain board** — Metro RP2040 socket position, MCP23017 socket, the 7× 74HC595 chain, 10× 2N3904 drivers, screw-terminal block edges. Top-down, to scale on a 7×9 cm perfboard. | TODO |
+| D-13.9  | Diagram    | Layout for the **I²C hub board** — connections shared by the 1602 LCD and both OLEDs; the 4-wire ribbon out to the displays. Smaller board. | TODO |
+| D-13.10 | Diagram    | Layout for the **LED bank board** — 50 LEDs in a grid with 50 current-limit resistors, the 74HC595 output bus traced across. Larger board (or two smaller ones). | TODO |
+| D-13.11 | Diagram    | Header pins + sockets pattern for mounting the Metro / Nicla / CH358 onto the brain board (so they remain removable). | TODO |
+| D-13.12 | Photo      | A completed brain board: top side (chips socketed), bottom side (cleanly soldered joints, no bridges). | TODO |
+| D-13.13 | Diagram    | Ferrule + heat-shrink technique on a panel-to-board stranded wire: strip → crimp ferrule → into screw terminal; or strip → tin → heat-shrink at the joint. | TODO |
+| D-13.14 | Photo      | All three perfboards stacked on standoffs in their final back-of-panel position, before the panel is closed up. | TODO |
+
+### 13.C — Panel mounting
+
+| ID | Kind | What it shows | Status |
+|---|---|---|---|
+| D-13.15 | Diagram (printable) | Single-page panel layout template: positions for 10 toggle switches, PTT, PIR window, 50 LEDs, both OLEDs, 1602 LCD, MT-301 key, master-OLED window near the key. Dimensioned. Designed to be printed at full size and used as a drilling guide. | TODO |
+| D-13.16 | Diagram    | Hole-size reference chart: toggle switches (~6 mm), MT-301 key (per its datasheet — likely 22 mm), LED bezels (5 mm), MCP23017 cutout (not applicable, mounted behind), PIR window. | TODO |
+| D-13.17 | Photo      | M3 brass standoff installed: showing the screw → standoff → board path. | TODO |
+| D-13.18 | Photo      | Cable management on the back of a finished panel: zip-tied bundles, adhesive cable mounts, no dangling wires. | TODO |
+| D-13.19 | Photo      | Switch labels applied: rows of toggles, each with its scenario label (Test Console default — "Main Power," "Aux Power," etc.). | TODO |
+| D-13.20 | Photo gallery | 2–3 example finished panels in different aesthetics (lab rig, sci-fi cockpit, museum kiosk). | TODO |
 
 ## Chapter 14 — First Real Run
 
@@ -159,29 +193,43 @@ Recommended sources:
 
 ## Summary
 
-- **39 illustrations total** across the manual (32 chapter-specific +
-  the appendix card; the master plan estimated ≈ 40, this list is the
-  authoritative count).
-- **18 are photographs** (taken at the bench during the real build).
-- **17 are diagrams** (Fritzing breadboard views + Inkscape pinouts +
-  the architecture and analogies).
+- **57 illustrations total** across the manual (56 chapter-specific +
+  the appendix card; up from the original 39 because Chapter 13
+  expanded from 2 figures to 21 when soldering and perfboard
+  migration were added per §8 decision #1).
+- **30 are photographs** (taken at the bench / panel-mount workstation
+  during the real build).
+- **21 are diagrams** (Fritzing breadboard + perfboard views, Inkscape
+  pinout charts, soldering technique illustrations, the architecture
+  and analogy figures, the printable panel layout).
 - **6 are screenshots** (file explorer, terminal, simulator).
 
 **Production order:**
 
 1. **Diagrams first** for chapters 0–4 (independent of the bench).
-2. **Photographs as the bench build happens**, in chapter order.
-3. **Screenshots last**, after the firmware and simulator are running
-   on the final hardware.
+2. **Photographs as the bench build happens**, in chapter order
+   (chapters 5–12).
+3. **Soldering and perfboard diagrams in parallel with the migration**
+   for chapter 13.A and 13.B — diagrams drafted first, photos taken
+   during the real migration to verify and to capture realistic hand
+   positions and joint quality.
+4. **Panel-mounting diagrams** (13.C) once the perfboards are
+   finished, so the layout template reflects what was actually built.
+5. **Screenshots last**, after the firmware and simulator are running
+   against the final wired hardware.
 
-**Tools required:**
+**Tools (all free + open source per §8 decision #2):**
 
-- Fritzing (free) — breadboard views.
-- Inkscape (free) — pinout charts and the architecture diagram.
-- Any phone camera with a macro mode — photos.
-- The OS's built-in screenshot tool — screenshots.
+| Tool | Used for |
+|---|---|
+| **Fritzing** | Breadboard views (chapters 5–12); perfboard views (chapter 13.B) |
+| **Inkscape** | Pinout charts, the architecture diagram, the water-pressure analogy, the soldering technique illustrations, the printable panel layout (PDF export) |
+| **GIMP** *(or Inkscape if preferred)* | Annotating photographs (arrows, callouts, labels overlaid on the raw image) |
+| **Phone or webcam macro mode** | Photographs — cameras are already in the deployment per §8 decision #3 |
+| **OS built-in screenshot tool** | The 6 screenshots |
 
-Store all source files (`.fzz`, `.svg`, raw photos) under
-`docs/user-manuals/source/` so they're version-controlled alongside the
-rendered chapters. Final rendered images go under
-`docs/user-manuals/images/`.
+Store all source files (`.fzz`, `.svg`, `.xcf`, raw photos) under
+`docs/user-manuals/source/`. Final rendered images (`.webp`, `.png`,
+`.pdf`) go under `docs/user-manuals/images/`. Both are
+version-controlled in the mini-ai-pi repo so a future editor can
+revise figures without recreating from scratch.

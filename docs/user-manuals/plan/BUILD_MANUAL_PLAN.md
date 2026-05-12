@@ -89,7 +89,7 @@ electronics builds.
 | 10 | **LEDs & the 74HC595 Shift-Register Chain** | All 50 LEDs are individually addressable from the CLI. |
 | 11 | **PTT, PIR, and the MT-301 Key Switch**     | Pressing PTT, walking past PIR, and turning the key all emit events. |
 | 12 | **The Always-On Ear — Arduino Nicla Voice** | Saying "computer" on the mic triggers a `wake` event on the Pi 5. |
-| 13 | **Mounting Everything Onto a Real Panel**   | Optional: panel cut/drilled, parts mounted with labels. |
+| 13 | **Permanent Build — Soldering, Perfboard, Panel Mounting** | Reader migrates the breadboard build to a soldered perfboard and mounts everything on a real panel with labels. |
 | 14 | **First Real Run**                          | Reader runs the full voice-loop demo end-to-end. **Final win.** |
 | 15 | **Troubleshooting**                         | Reader can look up symptoms → causes → fixes. |
 | A | **Bill of Materials**                        | One-stop parts list with links and approximate costs. |
@@ -168,9 +168,8 @@ stopping point is a usable result.
 
 Out of scope. Stated explicitly so future authors don't drift.
 
-- **Soldering.** The reference build uses breadboards and jumper wires.
-  Appendix D points the reader at where to learn soldering separately.
-- **PCB design or fabrication.**
+- **PCB design or fabrication.** Perfboard / stripboard is in scope
+  (Chapter 13); custom-fabbed PCBs are not.
 - **Custom enclosure design beyond a flat panel template.**
 - **The mini-ai software stack (Whisper, Ollama, Piper) setup from
   scratch.** That's covered by the existing `setup_all.py` flow and the
@@ -184,6 +183,13 @@ Out of scope. Stated explicitly so future authors don't drift.
 - **Operating system installation on the Pi 5.** The Pi is assumed to be
   already running per the existing mini-ai-pi setup automation.
 
+**In scope** (newly locked-in via the §8 decisions):
+- **Soldering.** Reader builds on breadboard first, then migrates to a
+  soldered perfboard for the permanent build. Chapter 13 covers
+  technique from a zero-experience starting point.
+- **Permanent mounting.** Chapter 13 (continued) covers panel-mount
+  fitting, cable management, and labelling. Not optional.
+
 ---
 
 ## 7. Diagrams and photos
@@ -191,51 +197,46 @@ Out of scope. Stated explicitly so future authors don't drift.
 Every wiring step needs both a **diagram** (schematic-style or
 Fritzing-style breadboard layout) and a **photograph** (so the reader
 can compare what their bench looks like to the reference). The full
-list is in [`DIAGRAM_LIST.md`](DIAGRAM_LIST.md) — approximately 40
-illustrations total.
+list is in [`DIAGRAM_LIST.md`](DIAGRAM_LIST.md) — approximately 50
+illustrations total (count went up with Chapter 13's soldering and
+perfboard diagrams).
 
-Open question: how are these produced?
+**Tools, all free and open source:**
 
-| Option | Pro | Con |
+| Tool | Used for | License |
 |---|---|---|
-| Fritzing (free)            | Industry-standard breadboard look | Has a learning curve; some parts not in library |
-| Hand-drawn + scanned        | Friendly, approachable | Not reproducible without the original artist |
-| Inkscape / vector by hand   | Polished | Slowest to produce |
-| Photographs only            | Real | Hard to label, less clear at small sizes |
+| **Fritzing**  | Breadboard layouts, schematic views, perfboard layouts | GPLv3 |
+| **Inkscape**  | Pinout charts, the architecture diagram, the analogy illustrations, the panel layout template (printable PDF) | GPLv3 |
+| **GIMP** *(or Inkscape)* | Annotating photographs (arrows, callouts) | GPLv3 |
 
-Recommendation: **Fritzing for breadboard layouts, plus annotated
-photographs for what-it-actually-looks-like.** Defer to the user's
-preference.
+Source files (`.fzz`, `.svg`, raw photos) live under
+`docs/user-manuals/source/`; rendered output (`.png`, `.webp`) lives
+under `docs/user-manuals/images/`. Both are version-controlled in the
+mini-ai-pi repo.
+
+**Photos** are taken in-house using one of the cameras already in the
+deployment (a Logitech C920 webcam, a phone camera, or any other
+camera the builder has at hand) — see [`STYLE_GUIDE.md`](STYLE_GUIDE.md)
+§3 *Photographs* for resolution, lighting, and background rules.
 
 ---
 
-## 8. Open questions for the user
+## 8. Decisions
 
-Before chapters are written, please decide:
+These were once open questions; the user answered them on 2026-05-12.
+Recorded here so future writers don't reopen settled choices.
 
-1. **Solderless only, or solder-allowed?** Current plan assumes
-   breadboard + jumper wires for the whole build. Some parts
-   (74HC595 chain, MCP23017) are noticeably tidier on a soldered
-   protoboard. Recommend solderless reference build with an Appendix D
-   note about migration.
-2. **Diagram tool.** See §7 — Fritzing is the recommended default.
-3. **Photo source.** Will photos be taken on the user's bench during the
-   real build, or sourced from the part vendors? Recommend taking
-   photos during the actual build — they're more relatable.
-4. **Multimeter — required tool or nice-to-have?** Current plan: nice-to-have.
-   The chapter on troubleshooting (Ch 15) uses it for power-rail checks but
-   the basic build doesn't depend on one.
-5. **Voice for the AI in the manual examples.** Should the manual show
-   a specific personality (e.g. Test Console) throughout, or switch
-   between scenarios? Recommend Test Console only — keeps wiring
-   chapters from being cluttered with scenario authoring.
-6. **One reader or two?** Some chapters get safer/faster with two
-   people (one to hold, one to wire). Should the manual call this out?
-   Recommend yes, occasionally, but never as a requirement.
-7. **Is the build supposed to be permanent or temporary?** A reusable
-   "lab rig" version is more forgiving; a "make a real cosplay panel"
-   version requires Chapter 13 (mounting). Both can be supported with
-   Chapter 13 marked optional.
+| # | Question | Decision | What this changes |
+|---|---|---|---|
+| 1 | Solderless only, or solder-allowed? | **Solder allowed.** Build is breadboard-first for verification, then migrated to a soldered perfboard for the permanent installation. | Adds Chapter 13 ("Permanent build: soldering + perfboard + panel mounting"). Adds a soldering-supplies section to the BOM. |
+| 2 | Diagram tool | **Fritzing + Inkscape, both free and open source.** | Locks in the toolchain — see §7. Source files committed under `docs/user-manuals/source/`. |
+| 3 | Photo source | **Taken in-house with existing cameras** (C920, phone, etc.). | No procurement. Photos shot during the real build for realism. |
+| 4 | Multimeter | **Required.** Used not just in troubleshooting (Ch 15) but also in checkpoints in Ch 4 (5 V rail), Ch 9 (switch continuity), and Ch 10 (LED-resistor sanity check). | Multimeter moves from Section 1.3 "nice to have" to Section 2 "required" in the BOM. New checkpoint usages added to the relevant chapter outlines. |
+| 5 | Personality used in the manual examples | **Test Console only** (recommended default — user did not override). | Keeps wiring chapters focused on hardware. Scenario authoring lives in `overlay/scenario/` docs (Drop 3+). |
+| 6 | One-person vs two-person callouts | **Both.** Single-person steps are the default; specific moments (e.g. holding the MT-301 still while wiring it) get a **TWO-PERSON** callout. | Adds a 6th callout style. See `STYLE_GUIDE.md` §3. |
+| 7 | Permanent or temporary build | **Permanent.** | Chapter 13 is mandatory and substantially expanded (now covers soldering, perfboard migration, and panel mounting in one chapter). Adds permanent-mounting hardware section to BOM. |
+| 8 | Speakers | **Yahboom is already in-system for Piper TTS; the CH358 gets its own small dedicated speaker.** Additional speakers can be added for stereo or scenario sound zones. | BOM lists the existing Yahboom and adds one small 8 Ω speaker (~$3) for the CH358. Future-stereo path is mentioned in Appendix D. |
+| 9 | Spare parts | **Generous spares welcome; user will procure whatever is listed.** | BOM gains a "Recommended spares" subsection (~$30) so the build is forgiving of magic-smoke moments. |
 
 ---
 
@@ -438,17 +439,79 @@ introduces (and that go into the glossary), and the diagrams it needs
 - **Diagrams:** D-12.1 Nicla Voice annotated photo; D-12.2 USB
   connection to Pi 5; D-12.3 expected log output.
 
-### Chapter 13 — Mounting Onto a Panel (Optional)
+### Chapter 13 — Permanent Build: Soldering, Perfboard, Panel Mounting
 
-- **Question:** *How do I make it look like a real control panel?*
-- **Reader learns:** simple panel options (foam board, plywood, 3D-print);
-  drilling holes for toggle switches and the key; LED mounting with
-  bezels; cable strain relief; labelling with a label-maker or
-  print-and-stick decals.
-- **Checkpoint:** all parts attached to a panel; cables don't dangle.
-- **New terms:** strain relief, panel-mount.
-- **Diagrams:** D-13.1 panel layout template (a single-sheet PDF the
-  reader can print); D-13.2 example finished panels.
+This is the longest chapter in the manual — about double the length of
+the wiring chapters (target 4,000–5,000 words, split across three
+sub-sections). The reader has just finished proving the entire build
+on the breadboard. Now they make it permanent.
+
+**Sub-section 13.A — Soldering basics**
+
+- **Question:** *I've never soldered before. What do I need to know?*
+- **Reader learns:** what a soldering iron is and the parts (tip,
+  heating element, stand, brass-wool tip cleaner); how to set
+  temperature (~350 °C / 660 °F for lead-free); the three rules of a
+  good joint (heat the parts not the solder; let solder flow toward
+  heat; remove iron then solder); how to tin a fresh tip; the visible
+  difference between a good joint (shiny, "volcano" shape) and a cold
+  joint (dull, lumpy); how to read a cross-section diagram of a
+  through-hole joint.
+- **Practice exercise:** solder one resistor onto a small scrap of
+  perfboard. Bend lead, insert, heat from below, feed solder from
+  above. Inspect. Repeat 3 times. **Do not move on until the third
+  joint looks like the reference photo.**
+- **New terms:** soldering iron, tip, tinning, flux, lead-free solder,
+  perfboard, stripboard, cold joint, solder bridge, desoldering wick.
+- **Safety:** the WARNING callout is large and unmissable — the iron
+  tip is hot enough to cause third-degree burns; fume extraction
+  matters; eyes are at risk from flying flux.
+
+**Sub-section 13.B — Migrating the breadboard build to perfboard**
+
+- **Question:** *How do I rebuild what's on the breadboard onto a
+  permanent board?*
+- **Reader learns:** to do the migration **one subsystem at a time**,
+  verifying with the simulator and CLI after each. Suggested layout: a
+  single perfboard for the brains (Metro + MCP23017 + 7× 74HC595 +
+  10× 2N3904 drivers), with the CH358 as a daughter-module via header
+  pins; a separate small board for the I²C displays' connector hub;
+  the LED bank stays on its own larger board; switches, PTT, key, and
+  PIR wire from the panel via stranded wire and screw terminals (or
+  header sockets) into the brain board.
+- **Wire choices:** solid 22 AWG for board-to-board jumpers; stranded
+  22 AWG with crimp ferrules for board-to-panel; heat-shrink tubing
+  over every exposed splice.
+- **Checkpoint after each subsystem:** the same CLI command that
+  worked on the breadboard still works on the perfboard. If it
+  doesn't, **stop and don't continue**; troubleshoot per Ch 15.
+
+**Sub-section 13.C — Mounting onto a panel**
+
+- **Question:** *How do I turn this into a real control panel?*
+- **Reader learns:** material choice (acrylic, plywood, aluminium —
+  trade-offs); the printable panel layout template (Appendix B
+  variant); drilling holes for toggle switches (typically 6 mm),
+  the MT-301 key (per its datasheet), LED bezels (5 mm or 3 mm),
+  the LCD bezel; mounting OLEDs with double-sided foam tape or
+  standoffs; standoffs for the perfboard at the back of the panel;
+  routing cables behind the panel; strain-relief with zip ties or
+  cable clips; labelling switches using printable adhesive sheets or
+  a label maker; back-panel access (hinge, latch, or screws-only).
+- **Checkpoint:** the panel can be moved as a single unit. Cables
+  don't dangle. Every switch and LED is labelled with its name from
+  the scenario it'll be used in (default: Test Console — see §8
+  decision #5).
+- **New terms:** panel-mount, standoff, strain relief, ferrule, crimp,
+  heat-shrink, back-panel.
+- **Diagrams:** see DIAGRAM_LIST.md §Chapter 13 — soldering technique,
+  joint cross-section, perfboard layout per subsystem, panel template,
+  mounting hardware reference.
+
+> **TWO-PERSON.** *(applicable to sub-section 13.C.)* When drilling
+> the panel for the MT-301 key, one person holds the key in position
+> while the other marks the centre and drills the pilot hole. Trying
+> to do this alone almost always produces an off-centre hole.
 
 ### Chapter 14 — First Real Run
 
@@ -521,11 +584,12 @@ Five forks the curious reader can take after finishing the manual:
 | 5 | Chapters 7–8 — displays | 1 sitting |
 | 6 | Chapter 9 + Chapter 10 — switches + LEDs | 1–2 sittings |
 | 7 | Chapter 11 + Chapter 12 — inputs + Nicla | 1 sitting |
-| 8 | Chapter 13 + Chapter 14 — mounting + first run | 1 sitting |
-| 9 | Chapter 15 — troubleshooting (populated *after* the build, from real failures encountered) | 1 sitting |
-| 10 | Appendices B–D + final read-through | 1 sitting |
+| 8 | Chapter 13 — soldering basics (13.A) + perfboard migration (13.B); written at the bench in real time during the migration | 2 sittings |
+| 9 | Chapter 13.C — panel mounting + Chapter 14 — first run | 1 sitting |
+| 10 | Chapter 15 — troubleshooting (populated *after* the build, from real failures encountered) | 1 sitting |
+| 11 | Appendices B–D + final read-through | 1 sitting |
 
-Total: ~10–12 sittings. Roughly half the writing is done **at the bench
+Total: ~11–13 sittings. Roughly half the writing is done **at the bench
 during the real build** — that's where the realistic checkpoints,
 gotchas, and "this is what it actually looks like" photos come from.
 That's also why writing earlier chapters first (which are
@@ -535,12 +599,13 @@ build-independent) reduces wasted work.
 
 ## 11. What to do next
 
-1. Read this plan; answer the 7 open questions in §8.
-2. Skim [`BILL_OF_MATERIALS.md`](BILL_OF_MATERIALS.md) and approve the
-   procurement gaps (the manual can't be written without those parts on
-   the bench).
-3. Skim [`STYLE_GUIDE.md`](STYLE_GUIDE.md) and adjust tone/format
-   preferences.
-4. Approve the chapter list. Each chapter draft will be a separate
-   commit so you can review and revise without waiting for the whole
-   manual.
+1. Open questions are resolved (see §8). No further input needed before
+   chapter writing begins.
+2. Procure the parts listed in [`BILL_OF_MATERIALS.md`](BILL_OF_MATERIALS.md)
+   §2 (procurement gap, including soldering supplies, permanent
+   mounting hardware, and recommended spares). Until those arrive on
+   the bench, chapter writing is limited to chapters 0–4 (orientation
+   + power, no wiring).
+3. Once parts arrive, chapter writing proceeds in the order in §10.
+   Each chapter draft will be a separate commit so the user can review
+   and revise without waiting for the whole manual.

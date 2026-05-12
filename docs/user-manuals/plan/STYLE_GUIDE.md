@@ -85,18 +85,28 @@ Sub-steps use letters: `a. b. c.` indented under the parent step.
 
 ### Callout boxes
 
-Five styles, all using Markdown blockquote + a leading **bold label** so
+Six styles, all using Markdown blockquote + a leading **bold label** so
 they render as plain Markdown anywhere.
 
 ```markdown
 > **WARNING.** Never connect the MT-301 key switch to mains household
 > power. We use only its low-voltage auxiliary contacts.
 
+> **WARNING.** *(soldering chapter)* The soldering iron tip is hot
+> enough to cause third-degree burns through fabric. Treat it as
+> dangerous every single time you reach for it. Wear safety glasses.
+> Ventilate the room.
+
 > **CHECKPOINT.** Before continuing, run `python -m overlay.pi5_hal sfx 1`
 > and confirm you hear the ack chime.
 
 > **TIP.** Take a photo of your wiring with your phone now. If
 > something stops working later, you can compare to find what changed.
+
+> **TWO-PERSON.** *(easier with a partner; possible alone.)* When
+> drilling the panel for the MT-301 key, one person holds the key in
+> position while the other marks the centre and drills the pilot hole.
+> If you're alone, clamp the key to a scrap-wood guide first.
 
 > **DEEP DIVE.** *(optional reading — skip on first pass.)* The
 > 2N3904's gain (called β or h_FE) at room temperature is roughly 200,
@@ -109,6 +119,12 @@ they render as plain Markdown anywhere.
 
 Distribute these throughout — every chapter should have at least one
 CHECKPOINT (the proof of completion) and at least one TIP or MISTAKE.
+Use **TWO-PERSON** sparingly — only where one of three things is true:
+(a) the action genuinely needs more than two hands; (b) the part is
+heavy or unwieldy enough that dropping it would damage it; (c) the
+step is dangerous enough that having a second person watching is
+sensible. Always describe how to do the step alone too — the manual
+must not assume a helper is available.
 
 ### Code blocks
 
