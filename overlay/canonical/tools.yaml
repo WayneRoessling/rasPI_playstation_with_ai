@@ -1,0 +1,106 @@
+# LLM tools catalog — every function the LLM can call across all scenarios
+#
+# Tools fall into two buckets:
+#   - generic: present in every scenario by default (LED, LCD, OLED, SFX)
+#   - scenario_specific: registered only by the scenario(s) listed under
+#     `used_by` (a free-text reference to scenario ids)
+#
+# `requires_arm: true` makes the tool refuse to dispatch unless the
+# MT-301 safety key is in ARM. The runtime plays SFX-DENY and tells the
+# LLM why; the LLM is instructed to relay the deny once and not retry.
+#
+# Cross-references:
+#   - sfx_slot_refs: every integer here must be in canonical/sfx_bank.yaml
+#     (slots 1..10).
+#   - used_by: scenario ids; the validator requires every value to be
+#     declared in canonical/scenarios.yaml.
+#   - referenced_displays: must be display protocol_ids in
+#     canonical/displays.yaml (B|MASTER).
+
+version: 1
+
+tools:
+
+  # ── Generic — every scenario gets these unless explicitly removed ─────
+
+  - id: play_sfx
+    kind: generic
+    description: Play one of the 10 universal SFX slots on the CH358.
+    requires_arm: false
+    sfx_slot_refs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+  - id: set_led
+    kind: generic
+    description: Turn a single panel LED on or off (1..50).
+    requires_arm: false
+
+  - id: set_leds_range
+    kind: generic
+    description: Turn a contiguous LED range on or off (inclusive).
+    requires_arm: false
+
+  - id: clear_leds
+    kind: generic
+    description: Turn every panel LED off.
+    requires_arm: false
+
+  - id: write_lcd
+    kind: generic
+    description: Write one line of the 1602 character LCD.
+    requires_arm: false
+    referenced_displays: []     # 1602 LCD has its own command, not OLED
+
+  - id: clear_lcd
+    kind: generic
+    description: Clear the 1602 character LCD.
+    requires_arm: false
+
+  - id: render_oled_status
+    kind: generic
+    description: Render the scenario/arm/health status block on an OLED.
+    requires_arm: false
+    referenced_displays: [B, MASTER]
+
+  - id: render_oled_alert
+    kind: generic
+    description: Render a large title + subtitle alert on an OLED.
+    requires_arm: false
+    referenced_displays: [B, MASTER]
+
+  - id: render_oled_text
+    kind: generic
+    description: Render up to 6 lines of free text on an OLED.
+    requires_arm: false
+    referenced_displays: [B, MASTER]
+
+  # ── Scenario-specific ────────────────────────────────────────────────
+
+  - id: initiate_launch_sequence
+    kind: scenario_specific
+    description: |
+      Begin the automated launch countdown. Plays SFX-COMMS once, then
+      SFX-TICK 10 times at 1 s intervals; lights LEDs 11..20 in turn;
+      writes T-10..T-0 to LCD line 2; plays SFX-STATUS at T-0; writes
+      LIFTOFF to LCD line 1. Validates switches S2, S3, S5, S7 are on.
+    requires_arm: true
+    sfx_slot_refs: [7, 9, 10]
+    used_by: [space_command_launch]
+
+  - id: hold_countdown
+    kind: scenario_specific
+    description: |
+      Halt an in-progress countdown. Lights LED 9, plays SFX-CAUTION,
+      writes HOLD to LCD line 1.
+    requires_arm: false
+    sfx_slot_refs: [3]
+    used_by: [space_command_launch]
+
+  - id: range_safety_destruct
+    kind: scenario_specific
+    description: |
+      Issue range-safety destruct (simulated). Requires S4 toggle on.
+      Lights LEDs 31..50, plays SFX-ALARM, renders BREACH on OLED B.
+    requires_arm: true
+    sfx_slot_refs: [4]
+    referenced_displays: [B]
+    used_by: [space_command_launch]

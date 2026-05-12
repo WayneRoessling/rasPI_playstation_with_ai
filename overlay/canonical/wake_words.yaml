@@ -1,0 +1,71 @@
+# Wake words & quick-intent keywords — Arduino Nicla Voice keyword bank
+#
+# The Nicla Voice runs a fixed trained model with a small set of keywords.
+# Words split into two roles:
+#   - wake: opens the mic / focuses attention (LLM round-trip follows)
+#   - intent: classified short command, no Whisper round-trip needed —
+#     dispatched locally by the scenario layer.
+#
+# A keyword can be both wake and intent (e.g. "abort" can wake the system
+# and also be the canonical word for the abort intent).
+#
+# The model id below corresponds to the trained .tflite file that lives
+# under overlay/firmware/nicla/models/ (Drop 4). Updating the keyword list
+# requires retraining; the validator only checks the catalog itself.
+#
+# Cross-references:
+#   - canonical/scenarios.yaml default_wake_words and
+#     default_intent_allowlist values must each appear here as a `key`
+#     value (validator enforces).
+
+version: 1
+model:
+  id: sentinel-v1
+  source: overlay/firmware/nicla/models/sentinel-v1.tflite
+  trained_on_count: 10
+
+# Universal keyword bank — every scenario's wake/intent set is drawn
+# from this. The keyword id is what's emitted in the `wake` / `intent`
+# JSON-lines event.
+
+keywords:
+
+  - key: computer
+    role: [wake]
+    description: Generic neutral wake word.
+
+  - key: mission_control
+    role: [wake]
+    description: Space Command launch wake phrase.
+
+  - key: flight
+    role: [wake]
+    description: Mission-Control-style address; also used as wake.
+
+  - key: captain
+    role: [wake]
+    description: Spaceship / pirate ship wake word.
+
+  - key: launch
+    role: [intent]
+    description: Initiate launch sequence.
+
+  - key: abort
+    role: [intent]
+    description: Abort current sequence; alarm.
+
+  - key: status
+    role: [intent]
+    description: Read out OLED MASTER status block.
+
+  - key: arm
+    role: [intent]
+    description: Narrate current key position (cannot rotate physically).
+
+  - key: disarm
+    role: [intent]
+    description: Same as arm — narrates current key position.
+
+  - key: help
+    role: [intent]
+    description: Recite the wake-word allowlist for this scenario.

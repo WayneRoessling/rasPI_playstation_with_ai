@@ -1,0 +1,66 @@
+# LEDs catalog — the 50 panel LEDs and their group assignments
+#
+# LEDs are driven by a 74HC595 shift-register chain (binary on/off, no
+# PWM). Pi 5 software maintains a mirror so it can render a coherent
+# whole-panel state even when only one LED command was sent.
+#
+# Numbering: 1..50, left-to-right then top-to-bottom on the physical
+# panel.
+#
+# Group assignments are universal hardware-bound — what scenarios put
+# *into* the groups is scenario-specific.
+#
+# Cross-references:
+#   - switch_mirror IDs in group switch_mirrors must each match an
+#     entry in canonical/switches.yaml.
+
+version: 1
+
+led_count: 50
+
+groups:
+
+  - id: switch_mirrors
+    description: |
+      LEDs 1–10 mirror toggle switches S1–S10 by hardware default. The
+      firmware lights them as the switch closes; the scenario layer may
+      override per-LED if desired.
+    range: [1, 10]
+    purpose: physical input feedback
+    switch_mirror_map:
+      - {led: 1,  switch: 1}
+      - {led: 2,  switch: 2}
+      - {led: 3,  switch: 3}
+      - {led: 4,  switch: 4}
+      - {led: 5,  switch: 5}
+      - {led: 6,  switch: 6}
+      - {led: 7,  switch: 7}
+      - {led: 8,  switch: 8}
+      - {led: 9,  switch: 9}
+      - {led: 10, switch: 10}
+
+  - id: sequence_progress
+    description: |
+      LEDs 11–20 are used by scenarios for progress indication: one
+      lights per step in countdowns, checklists, or sequenced events.
+    range: [11, 20]
+    purpose: scenario sequence
+
+  - id: scenario_status
+    description: |
+      LEDs 21–30 are status annunciators — green/amber bands by
+      convention. Scenario-specific meaning.
+    range: [21, 30]
+    purpose: scenario status
+
+  - id: alarm_annunciator
+    description: |
+      LEDs 31–50 are the red alarm cluster. Lit together in destructive
+      or critical events (Range Safety destruct, hull breach, abort).
+      Scenario layer typically flashes by toggling at 2 Hz.
+    range: [31, 50]
+    purpose: alarm / destruct annunciator
+
+# Validator constraints:
+#   - sum of group ranges must cover [1, led_count] without overlap
+#   - every switch_mirror_map.switch must be a valid switch id

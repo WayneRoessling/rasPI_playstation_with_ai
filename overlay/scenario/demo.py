@@ -32,6 +32,7 @@ try:
     from ..pi5_hal.transport import WebsocketTransport
     from .runtime import ScenarioRuntime
     from .test_console import TEST_CONSOLE
+    from .space_command_launch import SPACE_COMMAND_LAUNCH
     from .llm import run_turn, DEFAULT_MODEL, OLLAMA_DEFAULT_URL
 except ImportError:
     import os
@@ -41,7 +42,16 @@ except ImportError:
     from overlay.pi5_hal.transport import WebsocketTransport  # type: ignore
     from overlay.scenario.runtime import ScenarioRuntime  # type: ignore
     from overlay.scenario.test_console import TEST_CONSOLE  # type: ignore
+    from overlay.scenario.space_command_launch import SPACE_COMMAND_LAUNCH  # type: ignore
     from overlay.scenario.llm import run_turn, DEFAULT_MODEL, OLLAMA_DEFAULT_URL  # type: ignore
+
+
+# Scenario id → Scenario instance. Add new authored scenarios here as
+# they ship — the registry is intentionally small and explicit.
+SCENARIOS = {
+    "test_console": TEST_CONSOLE,
+    "space_command_launch": SPACE_COMMAND_LAUNCH,
+}
 
 
 def main(argv=None):
@@ -52,6 +62,9 @@ def main(argv=None):
                     help="interactive prompt loop (Ctrl-C to exit)")
     ap.add_argument("--sim", default="ws://127.0.0.1:8765/hal",
                     help="simulator WebSocket URL")
+    ap.add_argument("--scenario", default="test_console",
+                    choices=sorted(SCENARIOS.keys()),
+                    help="scenario id to load (default: test_console)")
     ap.add_argument("--model", default=DEFAULT_MODEL,
                     help="Ollama model name")
     ap.add_argument("--ollama", default=OLLAMA_DEFAULT_URL,
@@ -68,9 +81,11 @@ def main(argv=None):
     )
 
     hal = HalClient(WebsocketTransport(args.sim))
+    scenario = SCENARIOS[args.scenario]
     print(f"[demo] connecting to {args.sim} ...", file=sys.stderr)
+    print(f"[demo] scenario: {args.scenario} ({scenario.name})", file=sys.stderr)
     hal.connect()
-    runtime = ScenarioRuntime(hal, TEST_CONSOLE)
+    runtime = ScenarioRuntime(hal, scenario)
 
     def observer(name, kwargs, result):
         print(f"   ▸ tool {name}({_short(kwargs)}) -> {result}", file=sys.stderr)

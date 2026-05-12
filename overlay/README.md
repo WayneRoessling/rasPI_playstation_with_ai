@@ -36,24 +36,24 @@ overlay/
 │   └── HAL_PROTOCOL.md             serial / WebSocket protocol spec
 ├── canonical/                      OLENT-style canonical entity catalog
 │   ├── sfx_bank.yaml               ✓ 10 universal CH358 sounds
-│   ├── scenarios.yaml              TODO
-│   ├── switches.yaml               TODO
-│   ├── displays.yaml               TODO
-│   ├── leds.yaml                   TODO
-│   ├── wake_words.yaml             TODO (Nicla Voice keyword catalog)
-│   ├── tools.yaml                  TODO (LLM tool registry + arm-gating)
-│   └── hardware_modules.yaml       TODO (physical inventory)
+│   ├── scenarios.yaml              ✓ scenario registry (drop 3)
+│   ├── switches.yaml               ✓ 10 toggles + PTT + PIR + MT-301
+│   ├── displays.yaml               ✓ 1602 LCD + 2 OLEDs
+│   ├── leds.yaml                   ✓ 50 LEDs, group partitioning
+│   ├── wake_words.yaml             ✓ Nicla keyword bank
+│   ├── tools.yaml                  ✓ LLM tool registry + arm-gating
+│   └── hardware_modules.yaml       ✓ physical inventory
 ├── narratives/scenarios/           OLENT-style prose narratives
-│   ├── space_command_launch/       TODO
-│   ├── spaceship_cockpit/          TODO
-│   ├── pirate_ship/                TODO
-│   ├── mars_control_normal/        TODO
-│   ├── mars_control_disaster/      TODO
-│   └── army_battle_command/        TODO
+│   ├── space_command_launch/       ✓ first authored scenario (drop 3)
+│   ├── spaceship_cockpit/          TODO (drop 6)
+│   ├── pirate_ship/                TODO (drop 6)
+│   ├── mars_control_normal/        TODO (drop 6)
+│   ├── mars_control_disaster/      TODO (drop 6)
+│   └── army_battle_command/        TODO (drop 6)
 ├── tools/
 │   ├── generate_sfx.py             ✓ procedural WAV generator
-│   ├── emit_scenarios.py           TODO (narrative → canonical YAML)
-│   └── validate_canonical.py       TODO (cross-ref consistency check)
+│   ├── emit_scenarios.py           ✓ narrative → emitted scenario YAML
+│   └── validate_canonical.py       ✓ cross-ref consistency check
 ├── firmware/rp2040/                CircuitPython firmware (Adafruit Metro)
 │   ├── boot.py                     ✓
 │   ├── code.py                     ✓ main loop
@@ -125,6 +125,14 @@ firmware skeleton, browser simulator.
 tool-use loop, end-to-end CLI demo verified against the simulator
 with `qwen2.5:14b`.
 
+**Drop 3** (shipped): first authored scenario (Space Command launch
+center) with prose narrative + YAML frontmatter, full canonical YAML
+catalog set (scenarios, switches, displays, leds, tools, wake_words,
+hardware_modules), OLENT-lite emitter (`tools/emit_scenarios.py`),
+cross-reference validator (`tools/validate_canonical.py`), and
+flag-gated overlay integration in `voice_pipeline.py`
+(`MINI_AI_OVERLAY=true`) with PTT-gated recording.
+
 Today you can:
 
 1. **Generate the SFX bank**:
@@ -167,11 +175,11 @@ Today you can:
 
 | Capability                           | Drop |
 |--------------------------------------|------|
-| First scenario narrative (Space Command launch)    | 3 |
-| Other canonical YAMLs (switches, leds, tools, ...) | 3 |
-| `emit_scenarios.py` narrative → YAML               | 3 |
-| `validate_canonical.py` cross-refs                 | 3 |
-| `voice_pipeline.py` integration (PTT-gated, tool-use turn) | 3 |
+| First scenario narrative (Space Command launch)    | ✓ 3 |
+| Other canonical YAMLs (switches, leds, tools, ...) | ✓ 3 |
+| `emit_scenarios.py` narrative → YAML               | ✓ 3 |
+| `validate_canonical.py` cross-refs                 | ✓ 3 |
+| `voice_pipeline.py` integration (PTT-gated, tool-use turn) | ✓ 3 |
 | Nicla Voice firmware + keyword model               | 4 |
 | Real-HW bring-up (per peripheral)                  | 5–9 |
 | Scenario authoring for remaining five              | 6 |
