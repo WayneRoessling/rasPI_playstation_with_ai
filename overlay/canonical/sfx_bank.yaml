@@ -1,0 +1,253 @@
+# SFX Bank — universal 10-slot hardware sound effects (CH358D-TF-1G)
+#
+# These 10 sounds are scenario-AGNOSTIC. Same bank for every scenario.
+# Scenario-specific audio (voice clips, music beds, scenario stings) lives
+# in Pi 5 software audio under `~/mini-ai/sounds/<scenario_id>/` and plays
+# through the Yahboom speaker, not through the CH358.
+#
+# Each slot's WAV is generated procedurally by `overlay/tools/generate_sfx.py`
+# from the `spec` block below. No external audio assets, no licensing.
+#
+# Output format (CH358-compatible defaults, override if needed):
+#   - PCM 16-bit signed
+#   - 22050 Hz
+#   - Mono
+#   - Named OUTPUT_DIR/01.wav .. 10.wav
+#
+# Re-run after any edit:
+#   $ cd overlay && python tools/generate_sfx.py
+#
+# Then copy the 10 WAVs onto the CH358 TF card via the micro-USB port.
+
+version: 1
+output_format:
+  sample_rate: 22050
+  bit_depth: 16
+  channels: 1
+  filename_pattern: "{slot:02d}.wav"
+
+slots:
+
+  - slot: 1
+    id: SFX-ACK-001
+    role: ack
+    description: Command acknowledged. Friendly, short, rising.
+    triggered_by:
+      - LLM tool call ack
+      - valid switch toggle confirm
+      - PTT release with successful capture
+    spec:
+      type: chirp_rising
+      f_start_hz: 660
+      f_end_hz: 990
+      duration_ms: 150
+      waveform: sine
+      envelope:
+        # Piecewise linear: list of [time_fraction, amplitude]
+        - [0.0, 0.0]
+        - [0.1, 1.0]
+        - [0.7, 0.7]
+        - [1.0, 0.0]
+      gain_db: -3
+
+  - slot: 2
+    id: SFX-DENY-001
+    role: deny
+    description: Command refused, arm-gated, or invalid. Low, descending.
+    triggered_by:
+      - LLM tool call blocked by arm-gate
+      - invalid switch combination
+      - unknown wake-word phrase
+    spec:
+      type: chirp_falling
+      f_start_hz: 320
+      f_end_hz: 180
+      duration_ms: 220
+      waveform: square
+      envelope:
+        - [0.0, 0.0]
+        - [0.05, 0.9]
+        - [0.9, 0.6]
+        - [1.0, 0.0]
+      gain_db: -4
+
+  - slot: 3
+    id: SFX-CAUTION-001
+    role: caution
+    description: Yellow advisory. Triple chirp, mid-pitch, non-urgent.
+    triggered_by:
+      - soft scenario warnings (low fuel, comms degraded)
+      - reminder events
+    spec:
+      type: repeated_tone
+      f_hz: 880
+      duration_ms: 600
+      pulse_count: 3
+      pulse_ms: 120
+      gap_ms: 60
+      waveform: sine
+      envelope:
+        - [0.0, 0.0]
+        - [0.1, 1.0]
+        - [0.85, 0.9]
+        - [1.0, 0.0]
+      gain_db: -3
+
+  - slot: 4
+    id: SFX-ALARM-001
+    role: alarm
+    description: Red critical klaxon. Alternating two-tone, loud, unmistakable.
+    triggered_by:
+      - disaster scenario events (Mars disaster, hull breach)
+      - abort sequences
+      - emergency LLM tool call
+    spec:
+      type: klaxon
+      f_low_hz: 400
+      f_high_hz: 650
+      duration_ms: 2000
+      alternation_ms: 250
+      waveform: sawtooth
+      envelope:
+        - [0.0, 0.0]
+        - [0.05, 1.0]
+        - [0.95, 1.0]
+        - [1.0, 0.0]
+      gain_db: 0
+
+  - slot: 5
+    id: SFX-ARM-001
+    role: arm
+    description: MT-301 key turn to ARM. Mechanical clunk + confirming tone.
+    triggered_by:
+      - key event with pos="ARM"
+    spec:
+      type: impact_with_tone
+      noise_duration_ms: 80
+      noise_filter: lowpass_400
+      tone_f_hz: 880
+      tone_duration_ms: 420
+      total_duration_ms: 500
+      tone_envelope:
+        - [0.0, 0.0]
+        - [0.2, 1.0]
+        - [1.0, 0.0]
+      gain_db: -2
+
+  - slot: 6
+    id: SFX-DISARM-001
+    role: disarm
+    description: MT-301 key turn to SAFE. Softer descending mechanical.
+    triggered_by:
+      - key event with pos="SAFE"
+    spec:
+      type: impact_with_tone
+      noise_duration_ms: 60
+      noise_filter: lowpass_350
+      tone_f_hz: 660
+      tone_f_end_hz: 440
+      tone_duration_ms: 340
+      total_duration_ms: 400
+      tone_envelope:
+        - [0.0, 0.0]
+        - [0.15, 0.8]
+        - [1.0, 0.0]
+      gain_db: -4
+
+  - slot: 7
+    id: SFX-COMMS-001
+    role: comms
+    description: Comms channel opening. Squelch burst + clean chirp.
+    triggered_by:
+      - Nicla wake-word detected (mic is hot)
+      - LLM about to begin speaking
+      - scenario comms events
+    spec:
+      type: squelch_chirp
+      squelch_duration_ms: 80
+      squelch_filter: bandpass_800_2400
+      chirp_f_start_hz: 1200
+      chirp_f_end_hz: 1800
+      chirp_duration_ms: 180
+      total_duration_ms: 300
+      gain_db: -3
+
+  - slot: 8
+    id: SFX-CLICK-001
+    role: click
+    description: Switch / button tactile feedback. Very short, crisp.
+    triggered_by:
+      - any switch edge (firmware-local, no LLM round-trip)
+      - PTT press
+    spec:
+      type: noise_burst
+      duration_ms: 80
+      filter: highpass_1500
+      waveform: white_noise
+      envelope:
+        - [0.0, 0.0]
+        - [0.02, 1.0]
+        - [0.5, 0.5]
+        - [1.0, 0.0]
+      gain_db: -6
+
+  - slot: 9
+    id: SFX-TICK-001
+    role: tick
+    description: Single countdown beep. Played in sequence by sfx_seq for timers.
+    triggered_by:
+      - launch countdowns
+      - timed event sequences
+      - heartbeat ticks during dramatic moments
+    spec:
+      type: tone
+      f_hz: 1000
+      duration_ms: 150
+      waveform: sine
+      envelope:
+        - [0.0, 0.0]
+        - [0.05, 1.0]
+        - [0.6, 0.9]
+        - [1.0, 0.0]
+      gain_db: -3
+
+  - slot: 10
+    id: SFX-STATUS-001
+    role: status
+    description: Scenario transition / boot complete / mode change.
+    triggered_by:
+      - scenario switch
+      - system boot complete (after `ready` event)
+      - LLM "scenario change" tool call
+    spec:
+      type: multi_tone_sweep
+      frequencies_hz: [523, 659, 784, 988]  # C E G B
+      tone_duration_ms: 90
+      gap_ms: 20
+      waveform: sine
+      envelope:
+        - [0.0, 0.0]
+        - [0.1, 1.0]
+        - [0.85, 0.9]
+        - [1.0, 0.0]
+      gain_db: -3
+
+# ── Notes ────────────────────────────────────────────────────────────────────
+#
+# Why these 10:
+#   Every scenario uses two alarm tiers (caution + alarm), arm/disarm
+#   transitions on the MT-301 key, ack/deny for LLM tool calls, comms open
+#   for wake detection, tactile click for switch feedback, tick for any
+#   sequenced operation, and status for mode transitions. Scenario flavor
+#   (engine rumble, briefing voiceovers, music) is unconstrained because
+#   it plays through Pi 5 software audio with no slot limit.
+#
+# Adding sounds:
+#   You can't — the CH358 holds exactly 10 WAVs. To add an 11th, either
+#   re-purpose a slot (and amend every scenario narrative that references
+#   the old role) or add a second CH358 module.
+#
+# Tuning:
+#   Adjust gain_db and envelope timings to taste. Re-run generate_sfx.py
+#   and re-copy the WAVs. The CH358 doesn't care about exact spectra; only
+#   the duration and trigger pulse width matter for behavior.

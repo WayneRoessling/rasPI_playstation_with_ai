@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>mini-ai overlay simulator</title>
+<link rel="stylesheet" href="/static/panel.css" />
+</head>
+<body>
+
+<header>
+  <h1>mini-ai overlay simulator</h1>
+  <div id="status" class="status disconnected">disconnected</div>
+  <div class="conn">ws: <code id="ws-url"></code></div>
+</header>
+
+<main>
+
+  <section class="row">
+
+    <div class="card key-card">
+      <h2>MT-301 key</h2>
+      <select id="key-pos">
+        <option value="SAFE">SAFE</option>
+        <option value="ARM">ARM</option>
+      </select>
+    </div>
+
+    <div class="card buttons-card">
+      <h2>inputs</h2>
+      <button id="ptt" class="big ptt-btn">PTT (hold)</button>
+      <button id="pir" class="big pir-btn">PIR motion</button>
+    </div>
+
+    <div class="card lcd-card">
+      <h2>1602 LCD (panel A)</h2>
+      <pre id="lcd">
+                </pre>
+    </div>
+
+  </section>
+
+  <section class="row">
+
+    <div class="card switches-card">
+      <h2>toggle switches (10)</h2>
+      <div id="switch-row" class="switch-row"></div>
+    </div>
+
+    <div class="card sfx-card">
+      <h2>CH358 SFX bank</h2>
+      <div id="sfx-row" class="sfx-row"></div>
+    </div>
+
+  </section>
+
+  <section class="row">
+
+    <div class="card oled-card">
+      <h2>OLED panel B (0x3C)</h2>
+      <canvas id="oled-b" width="256" height="128"></canvas>
+    </div>
+
+    <div class="card oled-card">
+      <h2>OLED master (0x3D)</h2>
+      <canvas id="oled-master" width="256" height="128"></canvas>
+    </div>
+
+  </section>
+
+  <section class="row">
+
+    <div class="card leds-card">
+      <h2>LEDs (50)</h2>
+      <div id="led-grid" class="led-grid"></div>
+    </div>
+
+  </section>
+
+  <section class="row">
+
+    <div class="card log-card">
+      <h2>protocol log</h2>
+      <pre id="log"></pre>
+      <button id="clear-log">clear</button>
+    </div>
+
+  </section>
+
+</main>
+
+<script type="module" src="/static/panel.js"></script>
+</body>
+</html>
