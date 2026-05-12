@@ -68,12 +68,22 @@ overlay/
 │   ├── static/panel.js             ✓ WebSocket client + renderers
 │   ├── requirements.txt            ✓
 │   └── README.md                   ✓
-├── pi5_hal/                        TODO (Pi-side HAL client library)
-│   └── (to be added in next drop)
+├── pi5_hal/                        ✓ Pi-side HAL client (drop 2)
+│   ├── client.py                   ✓ HalClient + state mirror + RX thread
+│   ├── transport.py                ✓ WebSocket, Serial, Mock transports
+│   ├── cli.py                      ✓ `python -m overlay.pi5_hal ...`
+│   └── README.md                   ✓
+├── scenario/                       ✓ Scenario runtime + Ollama tool-use (drop 2)
+│   ├── runtime.py                  ✓ Scenario, ScenarioRuntime, arm-gate
+│   ├── tools.py                    ✓ Tool dataclass + 9 generic LLM tools
+│   ├── llm.py                      ✓ Ollama /api/chat tool-use loop
+│   ├── test_console.py             ✓ minimal pipeline-verification scenario
+│   ├── demo.py                     ✓ `python -m overlay.scenario.demo`
+│   └── README.md                   ✓
 └── dev_assets/sfx_preview/         output of tools/generate_sfx.py
 ```
 
-✓ = present in first drop. TODO = planned next.
+✓ = present. TODO = planned next.
 
 ## Architecture in one diagram
 
@@ -106,14 +116,21 @@ overlay/
 Pi 5 does not know whether it's talking to the firmware or the
 simulator. That is the whole point of the protocol layer.
 
-## "First drop" status
+## Status
+
+**Drop 1** (shipped): protocol spec, SFX bank + generator, RP2040
+firmware skeleton, browser simulator.
+
+**Drop 2** (shipped): Pi-side HAL client, scenario runtime, Ollama
+tool-use loop, end-to-end CLI demo verified against the simulator
+with `qwen2.5:14b`.
 
 Today you can:
 
 1. **Generate the SFX bank**:
    ```bash
    cd overlay
-   python tools/generate_sfx.py        # writes 10 WAVs to dev_assets/sfx_preview/
+   python tools/generate_sfx.py
    ```
 
 2. **Run the simulator**:
@@ -124,33 +141,41 @@ Today you can:
    # open http://localhost:8765/
    ```
 
-3. **Flash the RP2040** (when ready): see
-   [`firmware/rp2040/README.md`](firmware/rp2040/README.md). Without any
-   peripherals wired, the firmware will still emit `hello` / `ready` /
-   `heartbeat` correctly — useful for protocol smoke-testing.
+3. **Drive the panel from Python or the CLI**:
+   ```bash
+   pip install -r overlay/pi5_hal/requirements.txt
+   python -m overlay.pi5_hal led 1 on
+   python -m overlay.pi5_hal sfx 7
+   python -m overlay.pi5_hal lcd 1 "ALT 12000 OK"
+   python -m overlay.pi5_hal state
+   ```
 
-4. **Connect Pi 5 to either**: the next deliverable is the
-   `overlay/pi5_hal/` client library that gives `voice_pipeline.py`
-   a clean Python interface (`hal.on_switch`, `hal.set_led`,
-   `hal.play_sfx`, etc.) over either the USB CDC link to the
-   RP2040 or the WebSocket to the simulator. This will integrate
-   with the existing `mini_ai_config.py` / `voice_pipeline.py`
-   without disrupting the current voice loop.
+4. **Run a single LLM-driven turn** (requires Ollama with a
+   tool-capable model — `qwen2.5:14b` recommended):
+   ```bash
+   pip install -r overlay/scenario/requirements.txt
+   python -m overlay.scenario.demo \
+       "Turn on LEDs 1 through 5, write SYSTEM ARMED on LCD line 1, and play the status sound."
+   # or interactively
+   python -m overlay.scenario.demo --repl
+   ```
 
-## What's NOT in this drop, and where it goes next
+5. **Flash the RP2040** (when ready): see
+   [`firmware/rp2040/README.md`](firmware/rp2040/README.md).
+
+## What's NOT yet shipped, and where it goes next
 
 | Capability                           | Drop |
 |--------------------------------------|------|
-| Pi 5 HAL client (`overlay/pi5_hal/`) | 2    |
-| Ollama tool-use loop integration     | 2    |
-| First scenario narrative (Space Command launch) | 3 |
+| First scenario narrative (Space Command launch)    | 3 |
 | Other canonical YAMLs (switches, leds, tools, ...) | 3 |
-| `emit_scenarios.py` narrative → YAML  | 3   |
-| `validate_canonical.py` cross-refs    | 3   |
-| Nicla Voice firmware + keyword model  | 4   |
-| Real-HW bring-up (per peripheral)     | 5–9 |
-| Scenario authoring for remaining five | 6   |
-| Scripted scene validation harness     | 7   |
+| `emit_scenarios.py` narrative → YAML               | 3 |
+| `validate_canonical.py` cross-refs                 | 3 |
+| `voice_pipeline.py` integration (PTT-gated, tool-use turn) | 3 |
+| Nicla Voice firmware + keyword model               | 4 |
+| Real-HW bring-up (per peripheral)                  | 5–9 |
+| Scenario authoring for remaining five              | 6 |
+| Scripted scene validation harness                  | 7 |
 
 ## OLENT relationship
 
