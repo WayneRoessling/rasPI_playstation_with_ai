@@ -54,6 +54,25 @@ PIPER_BIN = os.path.join(HOME, "mini-ai/.venv/bin/piper")
 OLLAMA_URL = "http://localhost:11434/api"
 CAMERA_INDEX = 0
 
+# ── Overlay integration (Drop 3) ──────────────────────────────────────────────
+#
+# When MINI_AI_OVERLAY=true, the loop swaps the fixed-duration arecord and the
+# direct Ollama call for the scenario-driven tool-use pipeline: PTT-gated
+# recording, HAL state in the system prompt, LLM tool calls executed against
+# the simulator (or, later, the RP2040 firmware). Default off — the existing
+# voice loop continues to work for users without the overlay hardware/sim.
+#
+# Env knobs:
+#   MINI_AI_OVERLAY=true|false      enable the overlay path (default false)
+#   MINI_AI_OVERLAY_SCENARIO=<id>   scenario id; default space_command_launch
+#   MINI_AI_OVERLAY_HAL=<url>       HAL endpoint; default ws://127.0.0.1:8765/hal
+#   MINI_AI_OVERLAY_MODEL=<name>    Ollama model; default qwen2.5:14b
+OVERLAY_ENABLED = os.environ.get("MINI_AI_OVERLAY", "").lower() in ("1", "true", "yes")
+OVERLAY_SCENARIO_ID = os.environ.get("MINI_AI_OVERLAY_SCENARIO", "space_command_launch")
+OVERLAY_HAL_URL = os.environ.get("MINI_AI_OVERLAY_HAL", "ws://127.0.0.1:8765/hal")
+OVERLAY_MODEL = os.environ.get("MINI_AI_OVERLAY_MODEL", "qwen2.5:14b")
+OVERLAY_PTT_MAX_SECS = int(os.environ.get("MINI_AI_OVERLAY_PTT_MAX", "30"))
+
 # USB audio card is resolved lazily at first use (card number can shift on reboot)
 _audio_card: str | None = None
 
@@ -307,10 +326,172 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     _emit(status_q, "status", "Idle")
 
 
+# ── Overlay turn (PTT-gated, scenario-driven, tool-use LLM) ───────────────────
+
+def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
+    """Block until PTT press, then record while held; return wav path or None.
+
+    Uses the HAL state mirror's PTT field plus the event queue for edges. If
+    the user holds PTT for ``max_secs`` we cap the recording so a stuck button
+    doesn't pin the mic forever. Returns None if state.stop fires before any
+    press is observed.
+    """
+    # Drain any stale ptt event so we react only to a fresh press
+    _emit(status_q, "status", "Waiting for PTT")
+    # Wait for press edge
+    while True:
+        msg = hal.wait_for_event("ptt", timeout=0.5)
+        if msg is None:
+            continue
+        if int(msg.get("state", 0)) == 1:
+            break
+
+    _emit(status_q, "status", "Recording")
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    tmp.close()
+    # Start arecord in background; stop it on PTT release (or max_secs).
+    proc = subprocess.Popen(
+        ["arecord", "-D", _get_audio_card(),
+         "-f", "cd", "-t", "wav", "-d", str(max_secs), tmp.name],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    try:
+        # Poll for release. The arecord -d acts as a hard cap.
+        import time as _time
+        t0 = _time.monotonic()
+        while True:
+            if hal.state().get("ptt") == 0:
+                # Release observed via state mirror
+                break
+            msg = hal.wait_for_event("ptt", timeout=0.1)
+            if msg is not None and int(msg.get("state", 1)) == 0:
+                break
+            if _time.monotonic() - t0 > max_secs:
+                break
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+    # Resample to 16 kHz mono for Whisper, same as record_utterance
+    tmp16 = tmp.name.replace(".wav", "_16k.wav")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", tmp.name,
+             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", tmp16],
+            check=True, capture_output=True,
+        )
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except FileNotFoundError:
+            pass
+    return tmp16
+
+
+def run_overlay_turn(state: RuntimeState, runtime, history: list,
+                     status_q: Queue | None = None) -> list:
+    """One PTT-gated turn through the scenario tool-use loop.
+
+    ``runtime`` is an ``overlay.scenario.ScenarioRuntime`` already bound to a
+    connected HAL client. ``history`` is rolling conversation state — the
+    system prompt is rebuilt every turn so it reflects live HAL state.
+    """
+    from overlay.scenario.llm import run_turn   # local import: keep top-level light
+
+    hal = runtime.hal
+    wav = _record_ptt_gated(hal, status_q, OVERLAY_PTT_MAX_SECS)
+    if wav is None:
+        return history
+
+    _emit(status_q, "status", "Transcribing")
+    user_text = transcribe(wav)
+    try:
+        os.unlink(wav)
+    except FileNotFoundError:
+        pass
+
+    _, _, voice, gain, _ = state.snapshot()
+    _emit(status_q, "user", user_text)
+    if not user_text.strip():
+        _emit(status_q, "status", "No speech detected")
+        speak("I did not catch that. Try again.", voice, gain)
+        return history
+
+    _emit(status_q, "status", "Thinking")
+
+    def _observer(name, args, result):
+        _emit(status_q, "status", f"tool {name}")
+
+    speech, history = run_turn(
+        runtime, user_text,
+        model=OVERLAY_MODEL,
+        history=history,
+        on_tool_call=_observer,
+    )
+
+    _emit(status_q, "asst", speech)
+    if speech:
+        _, _, voice, gain, _ = state.snapshot()
+        _emit(status_q, "status", "Speaking")
+        speak(speech, voice, gain)
+    _emit(status_q, "status", "Idle")
+    return history
+
+
+def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
+    """Overlay-mode loop. Sets up the HAL + scenario, then PTT-driven turns."""
+    # Late imports so the existing voice loop has no hard dependency on the
+    # overlay package — if overlay/ is missing or its deps aren't installed,
+    # the non-overlay path still works.
+    from overlay.pi5_hal.client import HalClient
+    from overlay.pi5_hal.transport import WebsocketTransport
+    from overlay.scenario.runtime import ScenarioRuntime
+    from overlay.scenario.demo import SCENARIOS
+
+    if OVERLAY_SCENARIO_ID not in SCENARIOS:
+        _emit(status_q, "error",
+              f"Unknown overlay scenario {OVERLAY_SCENARIO_ID!r}; "
+              f"options: {sorted(SCENARIOS)}")
+        return
+
+    scenario = SCENARIOS[OVERLAY_SCENARIO_ID]
+    _emit(status_q, "status", f"Connecting overlay HAL @ {OVERLAY_HAL_URL}")
+    hal = HalClient(WebsocketTransport(OVERLAY_HAL_URL))
+    hal.connect()
+    runtime = ScenarioRuntime(hal, scenario)
+    _emit(status_q, "status", f"Overlay: {scenario.name}")
+
+    history: list = []
+    try:
+        while not state.stop.is_set():
+            try:
+                history = run_overlay_turn(state, runtime, history, status_q)
+            except KeyboardInterrupt:
+                _emit(status_q, "status", "Stopped")
+                break
+            except Exception as e:
+                _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
+                if state.stop.wait(2.0):
+                    break
+    finally:
+        try:
+            hal.disconnect()
+        except Exception:
+            pass
+
+
 # ── Loop runner (used by both CLI and the Tk panel) ───────────────────────────
 
 def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
     """Run conversation turns until state.stop is set or KeyboardInterrupt."""
+    if OVERLAY_ENABLED:
+        _emit(status_q, "status",
+              f"Overlay mode ({OVERLAY_SCENARIO_ID}) — set MINI_AI_OVERLAY= to disable")
+        _run_overlay_loop(state, status_q)
+        return
     while not state.stop.is_set():
         try:
             run_voice_turn(state, status_q)

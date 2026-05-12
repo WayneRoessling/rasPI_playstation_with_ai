@@ -1,0 +1,65 @@
+# Displays catalog — every visual output on the panel except the LEDs
+#
+# Three displays: one character LCD and two OLEDs. LEDs are in their own
+# catalog (canonical/leds.yaml) because they have their own addressing
+# convention and bulk-update path.
+#
+# Cross-references:
+#   - layouts: must be one of the layouts the controller supports (see
+#     HAL_PROTOCOL §5.4). Validator enforces the set below is a subset of
+#     the protocol's enumeration.
+
+version: 1
+
+displays:
+
+  - id: lcd_1602
+    hw_id: DISP-LCD-1602-A
+    kind: character_lcd
+    rows: 2
+    columns: 16
+    bus: i2c
+    bus_address: "0x27"
+    layouts:
+      - line_write          # one row of 16 chars
+      - clear
+    notes: |
+      Panel A. Always-visible 2-line status block. Wider character set
+      than the OLEDs but no graphics. Truncation is hard at 16 chars per
+      line; the firmware does not scroll.
+
+  - id: oled_b
+    hw_id: DISP-OLED-938-B
+    kind: graphical_oled
+    width_px: 128
+    height_px: 64
+    bus: i2c
+    bus_address: "0x3C"
+    protocol_id: "B"
+    layouts:
+      - text              # up to 6 short lines
+      - alert             # title + subtitle (large)
+      - status            # scenario / arm / health block
+      - icon              # named glyph (warn|comms|check|x)
+      - raw               # chunked 1bpp framebuffer
+    notes: |
+      Panel B. Scenario-specific status — alerts and richer visuals.
+      Software-driven; the firmware renders layouts so the Pi 5 sends
+      only structured data.
+
+  - id: oled_master
+    hw_id: DISP-OLED-STEMMA-M
+    kind: graphical_oled
+    width_px: 128
+    height_px: 64
+    bus: i2c
+    bus_address: "0x3D"
+    protocol_id: "MASTER"
+    layouts:
+      - status
+      - text
+      - alert
+    notes: |
+      Master status panel, top-center next to the MT-301 key. Always
+      shows current scenario name, arm state, and overall health. Acts
+      as the global console state-of-truth.

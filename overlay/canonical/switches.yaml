@@ -1,0 +1,98 @@
+# Switches catalog — the 10 physical toggle switches on the panel
+#
+# Switch positions are universal hardware (S1..S10); their *labels* are
+# scenario-specific (see canonical/scenarios.yaml or the emitted scenario
+# YAML). This file records the physical inventory and the firmware-side
+# behavior that is constant across scenarios.
+#
+# State semantics: 0 = open (down), 1 = closed (up). Firmware emits a
+# `switch` event with id (1..10) and state on every edge — see
+# overlay/docs/HAL_PROTOCOL.md §4.3.
+
+version: 1
+
+switches:
+
+  - id: 1
+    hw_id: SW-TOG-001
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 1
+    click_sfx_slot: 8         # SFX-CLICK on every edge (firmware-local)
+
+  - id: 2
+    hw_id: SW-TOG-002
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 2
+    click_sfx_slot: 8
+
+  - id: 3
+    hw_id: SW-TOG-003
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 3
+    click_sfx_slot: 8
+
+  - id: 4
+    hw_id: SW-TOG-004
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 4
+    click_sfx_slot: 8
+
+  - id: 5
+    hw_id: SW-TOG-005
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 5
+    click_sfx_slot: 8
+
+  - id: 6
+    hw_id: SW-TOG-006
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 6
+    click_sfx_slot: 8
+
+  - id: 7
+    hw_id: SW-TOG-007
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 7
+    click_sfx_slot: 8
+
+  - id: 8
+    hw_id: SW-TOG-008
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 8
+    click_sfx_slot: 8
+
+  - id: 9
+    hw_id: SW-TOG-009
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 9
+    click_sfx_slot: 8
+
+  - id: 10
+    hw_id: SW-TOG-010
+    physical: silver bat toggle, SPDT, panel-mount
+    led_mirror: 10
+    click_sfx_slot: 8
+
+# ── Auxiliary inputs ───────────────────────────────────────────────────────
+# These are not numbered switches but participate in the same input model.
+
+ptt:
+  hw_id: SW-PTT-001
+  physical: round momentary push-button (red), normally open
+  emits_event: ptt
+  click_sfx_slot: 8
+
+pir:
+  hw_id: SENS-PIR-001
+  physical: HC-SR501 passive IR motion sensor
+  emits_event: pir
+
+mt301_key:
+  hw_id: SW-KEY-MT301
+  physical: MT-301 two-position isolator key switch (SAFE/ARM)
+  emits_event: key
+  positions:
+    - SAFE
+    - ARM
+  arm_sfx_slot: 5             # SFX-ARM on transition to ARM
+  disarm_sfx_slot: 6          # SFX-DISARM on transition to SAFE
