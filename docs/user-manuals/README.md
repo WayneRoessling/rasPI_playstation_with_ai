@@ -36,7 +36,7 @@ described.
 | A | [Bill of Materials](appendix_A_bill_of_materials.md) | **shipped (Drop 3)** |
 | B | [Pinout Reference Card](appendix_B_pinout_reference_card.md) | **shipped** |
 | C | [Glossary](appendix_C_glossary.md) | **shipped (Drop 3)** |
-| D | [Going Further](appendix_D_going_further.md) | stub — Drop 4 |
+| D | [Going Further](appendix_D_going_further.md) | **shipped** |
 
 ## Planning documents
 
@@ -79,7 +79,7 @@ in `source/`, rendered PNGs in `images/`):
 | 4. **Appendix B (Pinout Reference Card) + diagrams D-2.1 / D-3.1 / D-4.3** | **done — this PR** |
 | 5. Chapters 5–12 (per-module build at the bench) | pending — Drop 4 |
 | 6. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
-| 7. Appendix D + final read-through | pending — Drop 4 |
+| 7. **Appendix D (Going Further)** | **done — this PR** |
 | 8. Production of the remaining diagrams and photographs | pending — separate workstream |
 
 Start with [`00_welcome_and_safety.md`](00_welcome_and_safety.md).
