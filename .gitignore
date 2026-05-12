@@ -17,3 +17,6 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Ralph Wiggum loop state (session-local, never commit)
+.claude/ralph-loop.local.md
