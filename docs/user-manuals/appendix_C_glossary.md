@@ -18,9 +18,19 @@ Every technical term bolded in chapters 0 through 4 of this manual, with a short
 
 ---
 
+## A (continued)
+
+**Arduino GIGA Display Shield.** A 3.5-inch capacitive touch screen (Arduino part ASX00039) that clips onto an Arduino GIGA R1 WiFi host board. Already in the build's inventory; the host R1 board is the missing piece. Introduced in Appendix D.
+
+**Arduino GIGA R1 WiFi.** The host board the GIGA Display Shield clips onto — roughly $80 and not in the build's inventory by default. Acts as a USB-serial peer to the Pi 5 if you wire the shield in as a touch scenario-selector. Introduced in Appendix D.
+
+---
+
 ## C
 
 **Camera (C920).** The Logitech C920 USB webcam used by the mini-ai for optional vision tasks. It's a UVC-class device, meaning any computer recognises it without a special driver. See [Chapter 1](01_what_you_already_have.md).
+
+**Custom PCB.** A printed circuit board fabricated to your own design, with copper traces baked in instead of wires you solder. Designed in a tool like KiCad, fabricated by a small-batch house like OSH Park. Out of scope for this manual; introduced as a pointer in Appendix D.
 
 **Common ground.** The practice of connecting every device's GND wire to the same set of wires, so all devices agree on what "zero volts" means. Sharing a ground is mandatory; devices with private "grounds" misbehave. See [Chapter 4](04_powering_things.md).
 
@@ -29,6 +39,8 @@ Every technical term bolded in chapters 0 through 4 of this manual, with a short
 ---
 
 ## E
+
+**Edge Impulse Studio.** A browser-based platform for training small machine-learning models that run on tiny chips. Has a deployment target for the Nicla Voice's NDP120, used in Appendix D's "train your own wake word" fork. Free developer tier is sufficient for this build.
 
 **ESD (electrostatic discharge).** The tiny zap you get from a doorknob in winter. Harmless to people, sometimes fatal to chips. The fix is to touch a grounded metal object before handling any chip. See [Chapter 0](00_welcome_and_safety.md).
 
@@ -60,6 +72,12 @@ Every technical term bolded in chapters 0 through 4 of this manual, with a short
 
 ---
 
+## K
+
+**KiCad.** A free, open-source schematic and PCB design tool (`kicad.org`). Introduced in Appendix D for readers who want to take the build past perfboard into a custom PCB.
+
+---
+
 ## L
 
 **LLM (large language model).** A type of AI program that reads text and writes more text. The mini-ai runs an LLM called Ollama, which is what produces the conversational replies. See [Chapter 1](01_what_you_already_have.md).
@@ -78,11 +96,15 @@ Every technical term bolded in chapters 0 through 4 of this manual, with a short
 
 **Ollama.** The piece of software running on the Pi that holds the large language model (LLM) and produces conversational replies. See [Chapter 1](01_what_you_already_have.md).
 
+**OSH Park.** A small-batch PCB fabrication house (`oshpark.com`). One option for turning a KiCad design into real circuit boards once you've outgrown perfboard. Introduced in Appendix D.
+
 ---
 
 ## P
 
 **Panel (control panel).** The flat board with switches, LEDs, displays, a small speaker, and a key switch on the front that the manual teaches you to build. See [Chapter 2](02_big_picture_of_the_control_panel.md).
+
+**Procedural spec.** A recipe (waveform, frequency, envelope, duration, gain) that the SFX generator follows to build a WAV file from scratch instead of using a pre-recorded audio asset. Lives in `overlay/canonical/sfx_bank.yaml`. Introduced in Appendix D.
 
 **Piper.** The piece of software running on the Pi that reads text out loud through the speaker — text-to-speech (TTS). See [Chapter 1](01_what_you_already_have.md).
 
@@ -105,6 +127,8 @@ Every technical term bolded in chapters 0 through 4 of this manual, with a short
 ## S
 
 **SBC (single-board computer).** An entire computer — processor, memory, network, video — on one circuit board, with no separate case or extras. The Raspberry Pi is an SBC. See [Chapter 1](01_what_you_already_have.md).
+
+**Scenario.** A named personality the panel takes on — its own voice, switch labels, sound mappings, and the set of tools the AI is allowed to use. Six scenarios ship with the build (Space Command Launch, Spaceship Cockpit, Pirate Ship, Mars Control Normal, Mars Control Disaster, Army Battle Command). Mentioned forward-reference in Chapter 14; introduced properly in Appendix D.
 
 **Simulator.** Software that pretends to be hardware. The mini-ai's simulator opens in your web browser and shows the panel as a clickable on-screen interface, so you can test code before any real wires are plugged in. See [Chapter 2](02_big_picture_of_the_control_panel.md).
 
