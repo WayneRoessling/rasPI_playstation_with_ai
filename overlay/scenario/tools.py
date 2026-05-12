@@ -115,6 +115,61 @@ def _exec_oled_text(hal, args: dict) -> str:
     return f"ok: {display} showing {len(lines)} text lines"
 
 
+def _exec_set_switch_indicator_led(hal, args: dict, runtime) -> str:
+    """Light the switch-indicator LED for a named switch (by label or id).
+
+    Switches 1-10 mirror LEDs 1-10 (canonical/leds.yaml `switch_mirrors`).
+    Accepts either a string label ("Main Bus A") that matches one of the
+    scenario's switch_labels (case-insensitive), or an integer 1-10 for
+    direct switch addressing. Lookup the resolved switch -> LED id and
+    call hal.set_led(id, on).
+
+    Takes the 3-arg execute signature so we can reach into the scenario
+    for its switch_labels list. The runtime detects 3-arg signatures via
+    inspect and passes itself; 2-arg tools continue working unchanged.
+    """
+    label = args.get("label")
+    sid = args.get("switch_id")
+    on = bool(args.get("on", True))
+
+    labels = list(runtime.scenario.switch_labels or [])[:10]
+
+    # Resolve to a 1..10 switch id
+    switch_id: int | None = None
+    if isinstance(sid, int) and 1 <= sid <= 10:
+        switch_id = sid
+    elif isinstance(sid, str) and sid.isdigit() and 1 <= int(sid) <= 10:
+        switch_id = int(sid)
+    elif isinstance(label, str) and label.strip():
+        needle = label.strip().casefold()
+        for i, lab in enumerate(labels, start=1):
+            if lab.casefold() == needle:
+                switch_id = i
+                break
+        if switch_id is None:
+            # Fuzzy: try contains-match for partial labels
+            for i, lab in enumerate(labels, start=1):
+                if needle in lab.casefold() or lab.casefold() in needle:
+                    switch_id = i
+                    break
+        if switch_id is None:
+            return (
+                f"error: label {label!r} did not match any switch label "
+                f"({', '.join(labels)})"
+            )
+    else:
+        return "error: provide either label or switch_id (1..10)"
+
+    # Switch i mirrors LED i (canonical/leds.yaml switch_mirrors group)
+    led_id = switch_id
+    hal.set_led(led_id, on)
+    resolved = labels[switch_id - 1] if switch_id - 1 < len(labels) else f"S{switch_id}"
+    return (
+        f"ok: switch-indicator LED {led_id} (S{switch_id} {resolved!r}) "
+        f"-> {'on' if on else 'off'}"
+    )
+
+
 # ── Built-in tool catalog ────────────────────────────────────────────────
 
 PLAY_SFX = Tool(
@@ -236,10 +291,32 @@ OLED_TEXT = Tool(
     execute=_exec_oled_text,
 )
 
+SET_SWITCH_INDICATOR_LED = Tool(
+    name="set_switch_indicator_led",
+    description=(
+        "Light the switch-indicator LED for a switch by its scenario "
+        "label (e.g. 'Main Bus A') or by switch id (1-10). Switches "
+        "1-10 mirror LEDs 1-10. Prefer this tool over set_led / "
+        "set_leds_range when the request names a labelled switch — it "
+        "removes the label-to-LED-id lookup the LLM would otherwise "
+        "have to do."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "label":     {"type": "string", "description": "the switch label"},
+            "switch_id": {"type": "integer", "minimum": 1, "maximum": 10},
+            "on":        {"type": "boolean"},
+        },
+    },
+    execute=_exec_set_switch_indicator_led,
+)
+
 
 GENERIC_TOOLS: list[Tool] = [
     PLAY_SFX,
     SET_LED, SET_LEDS_RANGE, CLEAR_LEDS,
     WRITE_LCD, CLEAR_LCD,
     OLED_STATUS, OLED_ALERT, OLED_TEXT,
+    SET_SWITCH_INDICATOR_LED,
 ]
