@@ -33,6 +33,17 @@ class HalClient:
         self._stop = threading.Event()
         self._rx_thread: Optional[threading.Thread] = None
         self._ready = threading.Event()
+        # Outgoing-command recording — opt-in via start_recording(). When
+        # not None, every cmd passed through send_raw() is appended. Used
+        # by the scene harness in overlay/scenes/ to assert what tools
+        # actually told the panel to do. None = recording off (default).
+        self._record: Optional[list[dict]] = None
+        # Mirror of the last write to each LCD line — populated whenever
+        # write_lcd is called (or a hex frame is decoded). The scene
+        # harness reads this for `lcd_line_N` assertions; nothing in the
+        # production paths depends on it, so the additional state is
+        # cheap.
+        self._lcd: dict[int, str] = {1: "", 2: ""}
         self._state: dict[str, Any] = {
             "switches": [0] * 10,
             "ptt": 0,
@@ -118,6 +129,47 @@ class HalClient:
                 "connected": self._state["connected"],
             }
 
+    def leds_mirror(self) -> list[int]:
+        """Return a copy of the commanded LED state (0/1 per index 0..49)."""
+        with self._lock:
+            return list(self._state["leds_mirror"])
+
+    def lcd_lines(self) -> dict[int, str]:
+        """Return the last-commanded LCD line text by line number (1, 2)."""
+        with self._lock:
+            return dict(self._lcd)
+
+    # ── recording (scene harness) ───────────────────────────────────────
+    def start_recording(self) -> None:
+        """Begin capturing every outgoing command in `pop_recording()`.
+
+        Used by the Drop 7 scene harness in `overlay/scenes/` to assert
+        what the runtime/LLM actually instructed the panel to do. Safe to
+        call repeatedly — calling again resets the buffer.
+        """
+        with self._lock:
+            self._record = []
+
+    def stop_recording(self) -> None:
+        """Disable command recording. Buffer is discarded."""
+        with self._lock:
+            self._record = None
+
+    def pop_recording(self) -> list[dict]:
+        """Return + clear the recorded commands since the last pop/start.
+
+        Returns an empty list if recording is off. Each entry is the raw
+        dict that went out over the wire, with `t` (the command type) and
+        whatever per-command fields the dispatcher set (`id`, `text`,
+        `slot`, …).
+        """
+        with self._lock:
+            if self._record is None:
+                return []
+            buf = self._record
+            self._record = []
+            return buf
+
     # ── command convenience ─────────────────────────────────────────────
     def _next(self) -> int:
         with self._lock:
@@ -128,6 +180,11 @@ class HalClient:
     def send_raw(self, cmd: dict) -> int:
         if "id" not in cmd:
             cmd["id"] = self._next()
+        # Tap the recorder before the transport write so a transient
+        # transport error still leaves a complete audit trail.
+        with self._lock:
+            if self._record is not None:
+                self._record.append(dict(cmd))
         self.transport.send(json.dumps(cmd))
         return cmd["id"]
 
@@ -147,9 +204,16 @@ class HalClient:
         return self.set_leds("00" * 50, "hex_pairs")
 
     def write_lcd(self, line: int, text: str) -> int:
-        return self.send_raw({"t": "lcd", "line": int(line), "text": str(text)})
+        line_i = int(line)
+        text_s = str(text)
+        with self._lock:
+            if line_i in (1, 2):
+                self._lcd[line_i] = text_s
+        return self.send_raw({"t": "lcd", "line": line_i, "text": text_s})
 
     def clear_lcd(self) -> int:
+        with self._lock:
+            self._lcd = {1: "", 2: ""}
         return self.send_raw({"t": "lcd_clear"})
 
     def render_oled(self, display: str, layout: str, data: dict) -> int:

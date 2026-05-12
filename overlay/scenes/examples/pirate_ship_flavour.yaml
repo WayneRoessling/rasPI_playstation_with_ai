@@ -1,0 +1,56 @@
+# pirate_ship_flavour
+#
+# Verifies the Pirate Ship scenario's tool dispatch and persona. Two
+# step-pairs:
+#
+#  1. "fire a broadside" should resolve to `fire_cannon`, which lights
+#     the gunnery LED band (31..40), plays SFX-ALARM (slot 4), and
+#     writes FIRE! on LCD line 1. Not arm-gated — pirates don't.
+#
+#  2. "pour the crew a round" should resolve to `dispense_grog`, which
+#     plays SFX-ACK (slot 1) and writes GROG RATION on LCD line 1.
+#
+# The reply_matches regex is loose (case-insensitive look for a pirate
+# motif like "aye", "matey", "broadside", "crew", "rum" …) so the
+# assertion verifies the persona is alive without pinning the model to
+# any specific wording.
+
+name: "pirate ship — broadside + grog ration"
+scenario: pirate_ship
+mode: llm
+model: qwen2.5:14b
+
+setup:
+  key: SAFE
+  switches: {1: off, 2: on, 3: off, 4: off, 5: off, 6: off, 7: on, 8: on, 9: off, 10: off}
+
+steps:
+  # 1. Fire a broadside. Not arm-gated; should succeed from SAFE.
+  - utterance: "fire a broadside, gunner"
+    expect:
+      tool_calls_include:
+        - {name: fire_cannon, result_matches: "ok: broadside away"}
+      lcd_line_1: "FIRE!"
+      # LEDs 31..40 are the gunnery band the tool lights.
+      leds_on: [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+      # Loose persona check — accept any of the common pirate motifs
+      # plus a few "weird sea-talk" phrases qwen2.5 reaches for.
+      reply_matches: "(?i)aye|arr|matey|broadside|fire|crew|cannons?|gun|sea|ship|powder|powers|timbers|booty"
+
+  # 2. Pour grog. Different tool, different SFX, different LCD line.
+  - utterance: "pour the crew a round of grog"
+    expect:
+      tool_calls_include:
+        - {name: dispense_grog, result_matches: "ok: ration dispensed"}
+      lcd_line_1: "GROG RATION"
+      reply_matches: "(?i)aye|arr|matey|grog|crew|rum|ration|toast|drink|cheers|hearties|swabs|tankard"
+
+scripted_tool_calls:
+  "fire a broadside, gunner":
+    - {name: fire_cannon}
+  "pour the crew a round of grog":
+    - {name: dispense_grog}
+
+scripted_replies:
+  "fire a broadside, gunner": "Aye captain! Broadside away."
+  "pour the crew a round of grog": "Aye, grog for the crew, captain."

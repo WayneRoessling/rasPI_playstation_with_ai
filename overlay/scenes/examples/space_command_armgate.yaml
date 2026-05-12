@@ -1,0 +1,76 @@
+# space_command_armgate
+#
+# Verifies the arm-gate behaviour for the Space Command Launch scenario:
+#
+#  • While the MT-301 key is in SAFE, the LLM should NOT successfully
+#    initiate the launch sequence. Even if the model attempts to call
+#    `initiate_launch_sequence`, the runtime refuses with SFX-DENY
+#    (slot 2) and returns a 'refused' string to the LLM.
+#
+#  • After the key turns to ARM, the same utterance should let the
+#    launch sequence proceed — the prelaunch checklist passes (we
+#    pre-set the four required switches), countdown LEDs come on, and
+#    LCD line 1 ends on "LIFTOFF".
+#
+# This scene also passes under `--mode mock`; in that mode the scripted
+# tool calls re-create the same trajectory deterministically. The
+# expected divergence between mock and LLM is the assistant text only
+# — assertions don't reach into that on this scene.
+
+name: "space command — arm-gate sequencing"
+scenario: space_command_launch
+mode: llm
+model: qwen2.5:14b
+
+setup:
+  # Pre-arm the four switches that initiate_launch_sequence requires:
+  #   S2 Boost Stage, S3 Telemetry, S5 Main Bus A, S7 Comms.
+  # Leaving the key in SAFE so the first attempt must refuse.
+  key: SAFE
+  switches: {1: on, 2: on, 3: on, 4: off, 5: on, 6: off, 7: on, 8: off, 9: off, 10: off}
+
+steps:
+  # 1. Initial state check — key is SAFE; prelaunch switches are set.
+  - assert:
+    expect:
+      state.key: SAFE
+      state.switches.1: 1
+      state.switches.2: 1
+      state.switches.4: 1
+      state.switches.6: 1
+
+  # 2. Attempt launch while SAFE. The runtime arm-gate should refuse
+  #    even if the LLM calls the tool — SFX-DENY (slot 2) is played by
+  #    the runtime itself, and the LLM is told it was refused. The
+  #    countdown LEDs (11-20) must remain dark.
+  - utterance: "begin launch sequence"
+    expect:
+      tool_calls_exclude:
+        # initiate_launch_sequence either isn't called (good) or returns
+        # a refusal string; either way none of the launch effects below
+        # should fire.
+        - {name: initiate_launch_sequence, result_matches: "^ok"}
+      leds_on: []      # countdown LEDs (11..20) must NOT have come on
+
+  # 3. Turn the key to ARM.
+  - event: {t: key, pos: ARM}
+    expect:
+      state.key: ARM
+
+  # 4. Retry the launch — should succeed. The exact ordering of tool
+  #    calls inside the runtime is fixed (initiate_launch_sequence runs
+  #    the whole countdown internally), so we can assert on the LED and
+  #    LCD endpoints. The 10-second sleep inside the tool is real, so
+  #    this step takes ≈10s + the LLM round-trip.
+  - utterance: "begin launch sequence"
+    expect:
+      tool_calls_include:
+        - {name: initiate_launch_sequence, result_matches: "ok: launch sequence complete"}
+      lcd_line_1: "LIFTOFF"
+      lcd_line_2: "T-00"
+      # All 10 countdown LEDs (11..20) should be lit at T-0.
+      leds_on: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+scripted_tool_calls:
+  "begin launch sequence":
+    - {name: initiate_launch_sequence}
