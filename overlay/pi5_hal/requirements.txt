@@ -1,0 +1,3 @@
+websocket-client>=1.6
+# Optional — required only for SerialTransport (real RP2040 over USB CDC)
+pyserial>=3.5

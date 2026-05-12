@@ -1,0 +1,2 @@
+requests>=2.31
+# pi5_hal package brings in websocket-client transitively
