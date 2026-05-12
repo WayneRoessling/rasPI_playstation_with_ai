@@ -61,13 +61,17 @@ GIMP for annotating in-house photographs. See
 and production order.
 
 **Shipped so far** (hand-coded SVG → PNG via headless Chromium; sources
-in `source/`, rendered PNGs in `images/`):
+in `source/`, rendered PNGs in `images/`. D-2.2 is a live screenshot of
+the simulator and so has no SVG source):
 
-| ID    | Diagram                              | Referenced in |
-|-------|--------------------------------------|---------------|
-| D-2.1 | Four-box architecture                | Ch 2          |
-| D-3.1 | Breadboard internal connections      | Ch 3          |
-| D-4.3 | Voltage = water-pressure analogy     | Ch 4          |
+| ID    | Diagram                                                  | Referenced in |
+|-------|----------------------------------------------------------|---------------|
+| D-2.1 | Four-box architecture                                    | Ch 2          |
+| D-2.2 | Simulator UI screenshot (`http://localhost:8765/`)       | Ch 2          |
+| D-3.1 | Breadboard internal connections                          | Ch 3          |
+| D-4.1 | Pi 5 40-pin GPIO header (5 V and GND pins highlighted)   | Ch 4          |
+| D-4.2 | Jumpers from Pi pins 2/6 to the breadboard rails         | Ch 4          |
+| D-4.3 | Voltage = water-pressure analogy                         | Ch 4          |
 
 ## Status
 
@@ -76,7 +80,8 @@ in `source/`, rendered PNGs in `images/`):
 | 1. Outline + plan documents | done |
 | 2. Review / approval | done |
 | 3. **Chapters 0–4 + Appendices A and C (Drop 3)** | done |
-| 4. **Appendix B (Pinout Reference Card) + diagrams D-2.1 / D-3.1 / D-4.3** | **done — this PR** |
+| 4. **Appendix B (Pinout Reference Card) + diagrams D-2.1 / D-3.1 / D-4.3** | done |
+| 4a. **Diagrams D-2.2 / D-4.1 / D-4.2** | **done — this PR** |
 | 5. Chapters 5–12 (per-module build at the bench) | pending — Drop 4 |
 | 6. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
 | 7. **Appendix D (Going Further)** | **done — this PR** |

@@ -38,7 +38,7 @@ Recommended sources:
 | ID | Kind | What it shows | Status |
 |---|---|---|---|
 | D-2.1 | Diagram     | The four-box architecture: Pi 5 ↔ Metro RP2040 (panel brain) + Nicla (ear), Metro ↔ Panel (switches/LEDs/displays/sound/key). | TODO |
-| D-2.2 | Screenshot  | The browser simulator UI running on localhost:8765, showing switches/LEDs/OLED/LCD/SFX/PTT/PIR/key sections. | TODO |
+| D-2.2 | Screenshot  | The browser simulator UI running on localhost:8765, showing switches/LEDs/OLED/LCD/SFX/PTT/PIR/key sections. | **shipped (Drop 4a)** — captured via Playwright; no SVG source |
 
 ## Chapter 03 — Setting Up Your Workspace
 
@@ -51,8 +51,8 @@ Recommended sources:
 
 | ID | Kind | What it shows | Status |
 |---|---|---|---|
-| D-4.1 | Diagram     | The Pi 5 40-pin GPIO header with **5 V** pins (2, 4) and **GND** pins (6, 9, 14, 20, 25, 30, 34, 39) highlighted in red and black. | TODO |
-| D-4.2 | Diagram     | Two female-to-male jumpers running from Pi 5 pins 2 and 6 to the breadboard's red (+) and black (−) rails. | TODO |
+| D-4.1 | Diagram     | The Pi 5 40-pin GPIO header with **5 V** pins (2, 4) and **GND** pins (6, 9, 14, 20, 25, 30, 34, 39) highlighted in red and black. | **shipped (Drop 4a)** |
+| D-4.2 | Diagram     | Two female-to-male jumpers running from Pi 5 pins 2 and 6 to the breadboard's red (+) and black (−) rails. | **shipped (Drop 4a)** |
 | D-4.3 | Diagram     | The voltage = water-pressure analogy: a tank, a pipe with a narrow section, a flow gauge. Labels match the manual's analogy in §2 of `STYLE_GUIDE.md`. | TODO |
 
 ## Chapter 05 — First Test — the Metro RP2040 Alone

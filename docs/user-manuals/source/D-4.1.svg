@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-label="The Raspberry Pi 5 forty-pin GPIO header drawn top-down, with each pin numbered one through forty and labelled with its standard function. Pin two and pin four are highlighted red as the five-volt power pins. Pins six, nine, fourteen, twenty, twenty-five, thirty, thirty-four, and thirty-nine are highlighted black as ground pins. All other pins are drawn in neutral grey.">
+  <title>D-4.1 — Pi 5 40-pin GPIO header with 5 V and GND pins highlighted</title>
+  <desc>Top-down view of the Raspberry Pi 5 forty-pin GPIO header. Pin 1 is in the top-left corner. Odd pins run along the top row left to right; even pins run along the bottom row left to right. Each pin is drawn as a small numbered square with its standard function written above (odd row) or below (even row). 5 V pins (2 and 4) are filled in red. Ground pins (6, 9, 14, 20, 25, 30, 34, 39) are filled in black. All other pins are neutral grey.</desc>
+
+  <style>
+    .title       { font: 600 18px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .sub         { font: 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .label-big   { font: 600 14px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .pin-num     { font: 600 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #ffffff; }
+    .pin-num-dk  { font: 600 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .fn          { font: 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .fn-power    { font: 600 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #cc1f1f; }
+    .fn-gnd      { font: 600 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .tiny        { font: 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #555; }
+    .callout     { font: 600 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .header-base { fill: #2a2a2a; stroke: #111; stroke-width: 2; }
+    .pin-neutral { fill: #888; stroke: #444; stroke-width: 1; }
+    .pin-5v      { fill: #cc1f1f; stroke: #7a0f0f; stroke-width: 1.4; }
+    .pin-33v     { fill: #d97a1f; stroke: #7a3a0f; stroke-width: 1.4; }
+    .pin-gnd     { fill: #111; stroke: #000; stroke-width: 1.4; }
+    .pi-board    { fill: #1a4f2a; stroke: #0b3018; stroke-width: 1.4; }
+    .arrow       { stroke: #111; stroke-width: 1.5; fill: none; }
+    .legend-box  { fill: #ffffff; stroke: #888; stroke-width: 1; }
+  </style>
+
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#111"/>
+    </marker>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="1200" height="400" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="20" y="28" class="title">D-4.1 — Pi 5 40-pin GPIO header (top-down)</text>
+  <text x="20" y="46" class="sub">Pin 1 is in the corner nearest the SD-card slot. Odd pins on the top row; even pins on the bottom row. We need pin 2 (red) and pin 6 (black) for this chapter.</text>
+
+  <!-- ============================================================ -->
+  <!--  PCB strip behind the header (the green board edge)          -->
+  <!-- ============================================================ -->
+  <rect x="60" y="155" width="1080" height="90" rx="2" class="pi-board"/>
+
+  <!-- ============================================================ -->
+  <!--  Black plastic header strip behind the pins                   -->
+  <!-- ============================================================ -->
+  <rect x="80" y="178" width="1040" height="48" rx="3" class="header-base"/>
+
+  <!--
+    Layout:
+      40 pins in a 2x20 grid.
+      Pin 1 top-left, pin 2 below it; pin 3 to the right of pin 1; etc.
+      Top row (odd):  pins 1, 3, 5, 7, ..., 39 at y=190
+      Bottom row(even): pins 2, 4, 6, 8, ..., 40 at y=214
+      Each pin is a 22x16 rectangle.
+      Column step: ~50 px (20 columns spanning 80..1100).
+      Column centre x for column i (0..19): 100 + 50*i
+  -->
+
+  <!-- Pin definitions: each row entry = [col, func, kind]
+       kind: 5v / 33v / gnd / neutral
+       Top row (odd pins 1,3,5,...,39):
+         1: 3V3 (33v)
+         3: GPIO2 / SDA (neutral)
+         5: GPIO3 / SCL (neutral)
+         7: GPIO4 (neutral)
+         9: GND (gnd)
+         11: GPIO17 (neutral)
+         13: GPIO27 (neutral)
+         15: GPIO22 (neutral)
+         17: 3V3 (33v)
+         19: GPIO10 / MOSI (neutral)
+         21: GPIO9 / MISO (neutral)
+         23: GPIO11 / SCLK (neutral)
+         25: GND (gnd)
+         27: GPIO0 / ID_SD (neutral)
+         29: GPIO5 (neutral)
+         31: GPIO6 (neutral)
+         33: GPIO13 (neutral)
+         35: GPIO19 (neutral)
+         37: GPIO26 (neutral)
+         39: GND (gnd)
+
+       Bottom row (even pins 2,4,6,...,40):
+         2: 5V (5v)
+         4: 5V (5v)
+         6: GND (gnd)
+         8: GPIO14 / TXD (neutral)
+         10: GPIO15 / RXD (neutral)
+         12: GPIO18 (neutral)
+         14: GND (gnd)
+         16: GPIO23 (neutral)
+         18: GPIO24 (neutral)
+         20: GND (gnd)
+         22: GPIO25 (neutral)
+         24: GPIO8 / CE0 (neutral)
+         26: GPIO7 / CE1 (neutral)
+         28: GPIO1 / ID_SC (neutral)
+         30: GND (gnd)
+         32: GPIO12 (neutral)
+         34: GND (gnd)
+         36: GPIO16 (neutral)
+         38: GPIO20 (neutral)
+         40: GPIO21 (neutral)
+  -->
+
+  <!-- ============================================================ -->
+  <!--  TOP ROW PINS (odd: 1..39)                                    -->
+  <!--  Pin centre y = 190                                           -->
+  <!-- ============================================================ -->
+  <g id="top-row-pins">
+    <!-- Pin 1 -->
+    <rect x="89"  y="182" width="22" height="16" rx="2" class="pin-33v"/>
+    <text x="100" y="194" text-anchor="middle" class="pin-num">1</text>
+    <!-- Pin 3 -->
+    <rect x="139" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="150" y="194" text-anchor="middle" class="pin-num">3</text>
+    <!-- Pin 5 -->
+    <rect x="189" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="200" y="194" text-anchor="middle" class="pin-num">5</text>
+    <!-- Pin 7 -->
+    <rect x="239" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="250" y="194" text-anchor="middle" class="pin-num">7</text>
+    <!-- Pin 9 (GND) -->
+    <rect x="289" y="182" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="300" y="194" text-anchor="middle" class="pin-num">9</text>
+    <!-- Pin 11 -->
+    <rect x="339" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="350" y="194" text-anchor="middle" class="pin-num">11</text>
+    <!-- Pin 13 -->
+    <rect x="389" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="400" y="194" text-anchor="middle" class="pin-num">13</text>
+    <!-- Pin 15 -->
+    <rect x="439" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="450" y="194" text-anchor="middle" class="pin-num">15</text>
+    <!-- Pin 17 -->
+    <rect x="489" y="182" width="22" height="16" rx="2" class="pin-33v"/>
+    <text x="500" y="194" text-anchor="middle" class="pin-num">17</text>
+    <!-- Pin 19 -->
+    <rect x="539" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="550" y="194" text-anchor="middle" class="pin-num">19</text>
+    <!-- Pin 21 -->
+    <rect x="589" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="600" y="194" text-anchor="middle" class="pin-num">21</text>
+    <!-- Pin 23 -->
+    <rect x="639" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="650" y="194" text-anchor="middle" class="pin-num">23</text>
+    <!-- Pin 25 (GND) -->
+    <rect x="689" y="182" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="700" y="194" text-anchor="middle" class="pin-num">25</text>
+    <!-- Pin 27 -->
+    <rect x="739" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="750" y="194" text-anchor="middle" class="pin-num">27</text>
+    <!-- Pin 29 -->
+    <rect x="789" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="800" y="194" text-anchor="middle" class="pin-num">29</text>
+    <!-- Pin 31 -->
+    <rect x="839" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="850" y="194" text-anchor="middle" class="pin-num">31</text>
+    <!-- Pin 33 -->
+    <rect x="889" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="900" y="194" text-anchor="middle" class="pin-num">33</text>
+    <!-- Pin 35 -->
+    <rect x="939" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="950" y="194" text-anchor="middle" class="pin-num">35</text>
+    <!-- Pin 37 -->
+    <rect x="989" y="182" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="1000" y="194" text-anchor="middle" class="pin-num">37</text>
+    <!-- Pin 39 (GND) -->
+    <rect x="1039" y="182" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="1050" y="194" text-anchor="middle" class="pin-num">39</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  BOTTOM ROW PINS (even: 2..40)                                -->
+  <!--  Pin centre y = 214                                           -->
+  <!-- ============================================================ -->
+  <g id="bottom-row-pins">
+    <!-- Pin 2 (5V — HIGHLIGHT) -->
+    <rect x="89"  y="206" width="22" height="16" rx="2" class="pin-5v"/>
+    <text x="100" y="218" text-anchor="middle" class="pin-num">2</text>
+    <!-- Pin 4 (5V) -->
+    <rect x="139" y="206" width="22" height="16" rx="2" class="pin-5v"/>
+    <text x="150" y="218" text-anchor="middle" class="pin-num">4</text>
+    <!-- Pin 6 (GND — HIGHLIGHT) -->
+    <rect x="189" y="206" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="200" y="218" text-anchor="middle" class="pin-num">6</text>
+    <!-- Pin 8 -->
+    <rect x="239" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="250" y="218" text-anchor="middle" class="pin-num">8</text>
+    <!-- Pin 10 -->
+    <rect x="289" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="300" y="218" text-anchor="middle" class="pin-num">10</text>
+    <!-- Pin 12 -->
+    <rect x="339" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="350" y="218" text-anchor="middle" class="pin-num">12</text>
+    <!-- Pin 14 (GND) -->
+    <rect x="389" y="206" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="400" y="218" text-anchor="middle" class="pin-num">14</text>
+    <!-- Pin 16 -->
+    <rect x="439" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="450" y="218" text-anchor="middle" class="pin-num">16</text>
+    <!-- Pin 18 -->
+    <rect x="489" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="500" y="218" text-anchor="middle" class="pin-num">18</text>
+    <!-- Pin 20 (GND) -->
+    <rect x="539" y="206" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="550" y="218" text-anchor="middle" class="pin-num">20</text>
+    <!-- Pin 22 -->
+    <rect x="589" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="600" y="218" text-anchor="middle" class="pin-num">22</text>
+    <!-- Pin 24 -->
+    <rect x="639" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="650" y="218" text-anchor="middle" class="pin-num">24</text>
+    <!-- Pin 26 -->
+    <rect x="689" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="700" y="218" text-anchor="middle" class="pin-num">26</text>
+    <!-- Pin 28 -->
+    <rect x="739" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="750" y="218" text-anchor="middle" class="pin-num">28</text>
+    <!-- Pin 30 (GND) -->
+    <rect x="789" y="206" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="800" y="218" text-anchor="middle" class="pin-num">30</text>
+    <!-- Pin 32 -->
+    <rect x="839" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="850" y="218" text-anchor="middle" class="pin-num">32</text>
+    <!-- Pin 34 (GND) -->
+    <rect x="889" y="206" width="22" height="16" rx="2" class="pin-gnd"/>
+    <text x="900" y="218" text-anchor="middle" class="pin-num">34</text>
+    <!-- Pin 36 -->
+    <rect x="939" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="950" y="218" text-anchor="middle" class="pin-num">36</text>
+    <!-- Pin 38 -->
+    <rect x="989" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="1000" y="218" text-anchor="middle" class="pin-num">38</text>
+    <!-- Pin 40 -->
+    <rect x="1039" y="206" width="22" height="16" rx="2" class="pin-neutral"/>
+    <text x="1050" y="218" text-anchor="middle" class="pin-num">40</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Function labels — above the top row                          -->
+  <!-- ============================================================ -->
+  <g id="top-fn-labels">
+    <text x="100" y="172" text-anchor="middle" class="fn-power">3V3</text>
+    <text x="150" y="172" text-anchor="middle" class="fn">GPIO2 (SDA)</text>
+    <text x="200" y="172" text-anchor="middle" class="fn">GPIO3 (SCL)</text>
+    <text x="250" y="172" text-anchor="middle" class="fn">GPIO4</text>
+    <text x="300" y="172" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="350" y="172" text-anchor="middle" class="fn">GPIO17</text>
+    <text x="400" y="172" text-anchor="middle" class="fn">GPIO27</text>
+    <text x="450" y="172" text-anchor="middle" class="fn">GPIO22</text>
+    <text x="500" y="172" text-anchor="middle" class="fn-power">3V3</text>
+    <text x="550" y="172" text-anchor="middle" class="fn">GPIO10</text>
+    <text x="600" y="172" text-anchor="middle" class="fn">GPIO9</text>
+    <text x="650" y="172" text-anchor="middle" class="fn">GPIO11</text>
+    <text x="700" y="172" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="750" y="172" text-anchor="middle" class="fn">ID_SD</text>
+    <text x="800" y="172" text-anchor="middle" class="fn">GPIO5</text>
+    <text x="850" y="172" text-anchor="middle" class="fn">GPIO6</text>
+    <text x="900" y="172" text-anchor="middle" class="fn">GPIO13</text>
+    <text x="950" y="172" text-anchor="middle" class="fn">GPIO19</text>
+    <text x="1000" y="172" text-anchor="middle" class="fn">GPIO26</text>
+    <text x="1050" y="172" text-anchor="middle" class="fn-gnd">GND</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Function labels — below the bottom row                       -->
+  <!-- ============================================================ -->
+  <g id="bottom-fn-labels">
+    <text x="100" y="240" text-anchor="middle" class="fn-power">5V</text>
+    <text x="150" y="240" text-anchor="middle" class="fn-power">5V</text>
+    <text x="200" y="240" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="250" y="240" text-anchor="middle" class="fn">GPIO14 (TXD)</text>
+    <text x="300" y="240" text-anchor="middle" class="fn">GPIO15 (RXD)</text>
+    <text x="350" y="240" text-anchor="middle" class="fn">GPIO18</text>
+    <text x="400" y="240" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="450" y="240" text-anchor="middle" class="fn">GPIO23</text>
+    <text x="500" y="240" text-anchor="middle" class="fn">GPIO24</text>
+    <text x="550" y="240" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="600" y="240" text-anchor="middle" class="fn">GPIO25</text>
+    <text x="650" y="240" text-anchor="middle" class="fn">GPIO8</text>
+    <text x="700" y="240" text-anchor="middle" class="fn">GPIO7</text>
+    <text x="750" y="240" text-anchor="middle" class="fn">ID_SC</text>
+    <text x="800" y="240" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="850" y="240" text-anchor="middle" class="fn">GPIO12</text>
+    <text x="900" y="240" text-anchor="middle" class="fn-gnd">GND</text>
+    <text x="950" y="240" text-anchor="middle" class="fn">GPIO16</text>
+    <text x="1000" y="240" text-anchor="middle" class="fn">GPIO20</text>
+    <text x="1050" y="240" text-anchor="middle" class="fn">GPIO21</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Corner marker: "Pin 1 is here"                               -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="60" y="100" width="190" height="44" fill="#fdecec" stroke="#cc1f1f" stroke-width="1.4" rx="4"/>
+    <text x="70" y="118" class="callout" fill="#cc1f1f">Corner near SD-card slot</text>
+    <text x="70" y="134" class="tiny">Pin 1 is at the top-left of this corner.</text>
+    <path d="M 100 144 L 100 175" class="arrow" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Big highlighted callout for pin 2 and pin 6                  -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="60" y="280" width="380" height="84" fill="#fdecec" stroke="#cc1f1f" stroke-width="1.6" rx="6"/>
+    <text x="72" y="302" class="callout" fill="#cc1f1f">Use these two pins in Chapter 4</text>
+    <g class="fn">
+      <!-- Pin 2 row -->
+      <rect x="72" y="312" width="20" height="14" rx="2" class="pin-5v"/>
+      <text x="100" y="324" class="label-big" fill="#cc1f1f">Pin 2 — +5 V</text>
+      <text x="220" y="324" class="tiny">red female-to-male jumper → breadboard + rail</text>
+      <!-- Pin 6 row -->
+      <rect x="72" y="334" width="20" height="14" rx="2" class="pin-gnd"/>
+      <text x="100" y="346" class="label-big" fill="#111">Pin 6 — GND</text>
+      <text x="220" y="346" class="tiny">black female-to-male jumper → breadboard − rail</text>
+    </g>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Legend (right side of pin-2/pin-6 callout)                   -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="470" y="280" width="320" height="84" class="legend-box" rx="4"/>
+    <text x="480" y="298" class="callout">Pin colour key</text>
+
+    <rect x="480" y="306" width="18" height="12" rx="2" class="pin-5v"/>
+    <text x="504" y="316" class="fn-power">5 V power (pins 2, 4)</text>
+
+    <rect x="480" y="322" width="18" height="12" rx="2" class="pin-33v"/>
+    <text x="504" y="332" class="fn">3.3 V power (pins 1, 17) — orange</text>
+
+    <rect x="480" y="338" width="18" height="12" rx="2" class="pin-gnd"/>
+    <text x="504" y="348" class="fn-gnd">GND (pins 6, 9, 14, 20, 25, 30, 34, 39)</text>
+
+    <rect x="480" y="354" width="18" height="6" rx="1" class="pin-neutral"/>
+    <text x="504" y="361" class="fn">all other pins (GPIOs) — use later</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Note about pin-numbering pattern                             -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="820" y="280" width="320" height="84" fill="#f4f4f4" stroke="#444" stroke-width="1.2" rx="4"/>
+    <text x="832" y="298" class="callout">How the numbering zig-zags</text>
+    <text x="832" y="314" class="tiny">Odd pins (1, 3, 5, …) run along the top row.</text>
+    <text x="832" y="328" class="tiny">Even pins (2, 4, 6, …) run along the bottom row.</text>
+    <text x="832" y="342" class="tiny">Pin 1 is in the corner closest to the SD-card slot;</text>
+    <text x="832" y="356" class="tiny">pin 40 is at the opposite end of the header.</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Pointer arrows to pin 2 and pin 6                            -->
+  <!-- ============================================================ -->
+  <g>
+    <!-- pointer to pin 2 -->
+    <path d="M 100 270 L 100 226" class="arrow" stroke="#cc1f1f" stroke-width="1.8" marker-end="url(#ah)"/>
+    <!-- pointer to pin 6 -->
+    <path d="M 200 270 L 200 226" class="arrow" stroke="#111" stroke-width="1.8" marker-end="url(#ah)"/>
+  </g>
+
+</svg>
