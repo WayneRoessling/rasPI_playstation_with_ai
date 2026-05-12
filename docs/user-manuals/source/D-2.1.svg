@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-label="Four-box architecture: Pi 5 talks to the Metro RP2040 and Nicla Voice over USB; the Metro talks to the Panel through loose wires.">
+  <title>Four-box architecture of the mini-ai control panel</title>
+  <desc>Pi 5 (brain) at top-left, Metro RP2040 (panel brain) in the middle, Nicla Voice (always-on ear) at top-right, and the Panel along the right side. USB cables connect the Pi to the Metro and to the Nicla. A bundle of loose wires connects the Metro to the panel parts: switches, LEDs, two OLEDs and an LCD, a sound module, a PTT button, a PIR sensor, and the MT-301 key.</desc>
+
+  <style>
+    .label-title { font: 600 18px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .label-sub   { font: 13px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .label-small { font: 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #444; }
+    .label-tiny  { font: 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #555; }
+    .label-cable { font: 600 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .box         { fill: #ffffff; stroke: #111; stroke-width: 2; }
+    .box-accent  { fill: #f4f6f9; stroke: #111; stroke-width: 2; }
+    .panel       { fill: #ffffff; stroke: #111; stroke-width: 2.5; }
+    .part        { fill: #ffffff; stroke: #444; stroke-width: 1.2; }
+    .usb-line    { stroke: #111; stroke-width: 3; fill: none; }
+    .wire-line   { stroke: #555; stroke-width: 1.2; fill: none; }
+    .wire-bundle { stroke: #111; stroke-width: 1.5; fill: none; stroke-dasharray: 0; }
+    .frame       { fill: none; stroke: #ccc; stroke-width: 1; }
+    .accent-bar  { fill: #1f4f8a; }
+  </style>
+
+  <!-- Outer frame & title -->
+  <rect x="0" y="0" width="900" height="600" fill="#ffffff"/>
+  <text x="20" y="34" class="label-title">D-2.1 — The four boxes of the mini-ai control panel</text>
+  <text x="20" y="54" class="label-small">Two brains (Pi 5, Metro RP2040), one ear (Nicla Voice), one panel. USB between the brains. Loose wires from Metro to panel.</text>
+
+  <!-- ============================================================ -->
+  <!--  BOX 1 — Pi 5 (brain)                                         -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="40" y="100" width="220" height="140" rx="10" class="box-accent"/>
+    <rect x="40" y="100" width="220" height="22" rx="10" class="accent-bar"/>
+    <text x="50" y="117" class="label-title" fill="#ffffff">BOX 1</text>
+    <text x="155" y="155" text-anchor="middle" class="label-title">Raspberry Pi 5</text>
+    <text x="155" y="175" text-anchor="middle" class="label-sub">the brain</text>
+    <text x="155" y="200" text-anchor="middle" class="label-small">runs speech, the AI,</text>
+    <text x="155" y="216" text-anchor="middle" class="label-small">and text-to-speech</text>
+    <text x="155" y="232" text-anchor="middle" class="label-tiny">slow but smart</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  BOX 2 — Metro RP2040 (panel brain) — middle                  -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="340" y="270" width="220" height="140" rx="10" class="box-accent"/>
+    <rect x="340" y="270" width="220" height="22" rx="10" class="accent-bar"/>
+    <text x="350" y="287" class="label-title" fill="#ffffff">BOX 2</text>
+    <text x="450" y="325" text-anchor="middle" class="label-title">Metro RP2040</text>
+    <text x="450" y="345" text-anchor="middle" class="label-sub">the panel brain</text>
+    <text x="450" y="370" text-anchor="middle" class="label-small">flips pins, reads switches,</text>
+    <text x="450" y="386" text-anchor="middle" class="label-small">talks I&#178;C to displays</text>
+    <text x="450" y="402" text-anchor="middle" class="label-tiny">fast but single-task</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  BOX 3 — Nicla Voice (ear)                                    -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="640" y="100" width="220" height="140" rx="10" class="box-accent"/>
+    <rect x="640" y="100" width="220" height="22" rx="10" class="accent-bar"/>
+    <text x="650" y="117" class="label-title" fill="#ffffff">BOX 3</text>
+    <text x="750" y="155" text-anchor="middle" class="label-title">Nicla Voice</text>
+    <text x="750" y="175" text-anchor="middle" class="label-sub">the always-on ear</text>
+    <text x="750" y="200" text-anchor="middle" class="label-small">listens 24/7 for the</text>
+    <text x="750" y="216" text-anchor="middle" class="label-small">wake word "computer"</text>
+    <text x="750" y="232" text-anchor="middle" class="label-tiny">tiny chip, tiny power</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  BOX 4 — The Panel (large, right side / bottom)               -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="540" y="430" width="340" height="150" rx="6" class="panel"/>
+    <rect x="540" y="430" width="340" height="22" rx="6" class="accent-bar"/>
+    <text x="550" y="447" class="label-title" fill="#ffffff">BOX 4 — The Panel</text>
+
+    <!-- Switches row -->
+    <g>
+      <text x="555" y="475" class="label-small">10 toggle switches</text>
+      <rect x="555" y="481" width="12" height="14" class="part"/>
+      <rect x="570" y="481" width="12" height="14" class="part"/>
+      <rect x="585" y="481" width="12" height="14" class="part"/>
+      <rect x="600" y="481" width="12" height="14" class="part"/>
+      <rect x="615" y="481" width="12" height="14" class="part"/>
+      <rect x="630" y="481" width="12" height="14" class="part"/>
+      <rect x="645" y="481" width="12" height="14" class="part"/>
+      <rect x="660" y="481" width="12" height="14" class="part"/>
+      <rect x="675" y="481" width="12" height="14" class="part"/>
+      <rect x="690" y="481" width="12" height="14" class="part"/>
+    </g>
+
+    <!-- LEDs grid (top-right cluster) -->
+    <g>
+      <text x="720" y="475" class="label-small">50 LEDs</text>
+      <g fill="#ffffff" stroke="#444">
+        <!-- 5 rows of 10 small circles -->
+        <g>
+          <circle cx="725" cy="488" r="2.6"/><circle cx="735" cy="488" r="2.6"/><circle cx="745" cy="488" r="2.6"/><circle cx="755" cy="488" r="2.6"/><circle cx="765" cy="488" r="2.6"/><circle cx="775" cy="488" r="2.6"/><circle cx="785" cy="488" r="2.6"/><circle cx="795" cy="488" r="2.6"/><circle cx="805" cy="488" r="2.6"/><circle cx="815" cy="488" r="2.6"/>
+        </g>
+        <g>
+          <circle cx="725" cy="498" r="2.6"/><circle cx="735" cy="498" r="2.6"/><circle cx="745" cy="498" r="2.6"/><circle cx="755" cy="498" r="2.6"/><circle cx="765" cy="498" r="2.6"/><circle cx="775" cy="498" r="2.6"/><circle cx="785" cy="498" r="2.6"/><circle cx="795" cy="498" r="2.6"/><circle cx="805" cy="498" r="2.6"/><circle cx="815" cy="498" r="2.6"/>
+        </g>
+        <g>
+          <circle cx="725" cy="508" r="2.6"/><circle cx="735" cy="508" r="2.6"/><circle cx="745" cy="508" r="2.6"/><circle cx="755" cy="508" r="2.6"/><circle cx="765" cy="508" r="2.6"/><circle cx="775" cy="508" r="2.6"/><circle cx="785" cy="508" r="2.6"/><circle cx="795" cy="508" r="2.6"/><circle cx="805" cy="508" r="2.6"/><circle cx="815" cy="508" r="2.6"/>
+        </g>
+        <g>
+          <circle cx="725" cy="518" r="2.6"/><circle cx="735" cy="518" r="2.6"/><circle cx="745" cy="518" r="2.6"/><circle cx="755" cy="518" r="2.6"/><circle cx="765" cy="518" r="2.6"/><circle cx="775" cy="518" r="2.6"/><circle cx="785" cy="518" r="2.6"/><circle cx="795" cy="518" r="2.6"/><circle cx="805" cy="518" r="2.6"/><circle cx="815" cy="518" r="2.6"/>
+        </g>
+        <g>
+          <circle cx="725" cy="528" r="2.6"/><circle cx="735" cy="528" r="2.6"/><circle cx="745" cy="528" r="2.6"/><circle cx="755" cy="528" r="2.6"/><circle cx="765" cy="528" r="2.6"/><circle cx="775" cy="528" r="2.6"/><circle cx="785" cy="528" r="2.6"/><circle cx="795" cy="528" r="2.6"/><circle cx="805" cy="528" r="2.6"/><circle cx="815" cy="528" r="2.6"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- Displays -->
+    <g>
+      <rect x="555" y="510" width="80" height="22" class="part"/>
+      <text x="595" y="525" text-anchor="middle" class="label-tiny">1602 LCD</text>
+      <rect x="555" y="538" width="38" height="22" class="part"/>
+      <text x="574" y="552" text-anchor="middle" class="label-tiny">OLED B</text>
+      <rect x="597" y="538" width="38" height="22" class="part"/>
+      <text x="616" y="552" text-anchor="middle" class="label-tiny">OLED M</text>
+    </g>
+
+    <!-- Sound module -->
+    <g>
+      <rect x="645" y="538" width="58" height="22" class="part"/>
+      <text x="674" y="552" text-anchor="middle" class="label-tiny">CH358 + spkr</text>
+    </g>
+
+    <!-- PTT, PIR, Key -->
+    <g>
+      <circle cx="720" cy="549" r="9" class="part"/>
+      <text x="720" y="572" text-anchor="middle" class="label-tiny">PTT</text>
+      <rect x="745" y="540" width="18" height="18" class="part"/>
+      <text x="754" y="572" text-anchor="middle" class="label-tiny">PIR</text>
+      <circle cx="790" cy="549" r="9" class="part"/>
+      <line x1="790" y1="544" x2="790" y2="554" stroke="#444" stroke-width="1.5"/>
+      <text x="790" y="572" text-anchor="middle" class="label-tiny">MT-301 key</text>
+    </g>
+
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Connections                                                  -->
+  <!-- ============================================================ -->
+
+  <!-- USB: Pi 5 -> Metro RP2040 -->
+  <g>
+    <!-- thick line with double-stroke effect -->
+    <path d="M 150 240 C 150 285, 380 250, 410 270" class="usb-line"/>
+    <!-- small plug squares at endpoints -->
+    <rect x="142" y="232" width="16" height="10" fill="#111"/>
+    <rect x="402" y="262" width="16" height="10" fill="#111"/>
+    <text x="220" y="266" class="label-cable">USB-C cable</text>
+    <text x="220" y="280" class="label-tiny">(JSON-lines, 115200 baud)</text>
+  </g>
+
+  <!-- USB: Pi 5 -> Nicla Voice -->
+  <g>
+    <path d="M 260 170 L 640 170" class="usb-line"/>
+    <rect x="252" y="165" width="16" height="10" fill="#111"/>
+    <rect x="632" y="165" width="16" height="10" fill="#111"/>
+    <text x="450" y="160" text-anchor="middle" class="label-cable">USB-A to USB-C cable</text>
+    <text x="450" y="190" text-anchor="middle" class="label-tiny">(wake-word events only)</text>
+  </g>
+
+  <!-- Wire bundle: Metro -> Panel (drawn as several parallel thin lines + a colour-coded sample) -->
+  <g>
+    <!-- individual coloured wires (terminate at panel left edge, x=540) -->
+    <!-- 5V red -->
+    <path d="M 560 320 C 580 360, 540 420, 540 433" stroke="#cc1f1f" stroke-width="1.6" fill="none"/>
+    <!-- GND black -->
+    <path d="M 560 332 C 585 365, 540 425, 540 446" stroke="#111" stroke-width="1.6" fill="none"/>
+    <!-- SDA yellow -->
+    <path d="M 560 344 C 590 372, 540 432, 540 459" stroke="#d6a200" stroke-width="1.6" fill="none"/>
+    <!-- SCL blue -->
+    <path d="M 560 356 C 595 378, 540 440, 540 472" stroke="#1f4f8a" stroke-width="1.6" fill="none"/>
+    <!-- signal green (LEDs / switches) -->
+    <path d="M 560 368 C 600 385, 540 455, 540 510" stroke="#197a3c" stroke-width="1.6" fill="none"/>
+    <!-- signal white -->
+    <path d="M 560 380 C 605 395, 540 470, 540 540" stroke="#aaaaaa" stroke-width="1.6" fill="none"/>
+
+    <!-- legend / labels for wires (placed in top-left empty area to avoid overlap) -->
+    <text x="40" y="280" class="label-cable">~30 loose wires (Metro → Panel)</text>
+    <g class="label-tiny">
+      <rect x="40" y="290" width="14" height="8" fill="#cc1f1f"/>
+      <text x="60" y="298">red = +5 V power</text>
+      <rect x="40" y="302" width="14" height="8" fill="#111"/>
+      <text x="60" y="310">black = GND (ground)</text>
+      <rect x="40" y="314" width="14" height="8" fill="#d6a200"/>
+      <text x="60" y="322">yellow = I&#178;C SDA (data)</text>
+      <rect x="40" y="326" width="14" height="8" fill="#1f4f8a"/>
+      <text x="60" y="334">blue = I&#178;C SCL (clock)</text>
+      <rect x="40" y="338" width="14" height="8" fill="#197a3c"/>
+      <text x="60" y="346">green = signal (LEDs, switches)</text>
+      <rect x="40" y="350" width="14" height="8" fill="#aaaaaa"/>
+      <text x="60" y="358">white = anything else</text>
+    </g>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Footnotes                                                    -->
+  <!-- ============================================================ -->
+  <g class="label-tiny">
+    <text x="40" y="575">Solid black line = USB cable.  Coloured thin lines = loose wires (see colour key).  Test everything in the browser simulator before any wire is plugged in.</text>
+  </g>
+</svg>

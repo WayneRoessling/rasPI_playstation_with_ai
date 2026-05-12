@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1380 400" width="1380" height="400" role="img" aria-label="Breadboard internal connections: the long plus and minus rails run the full length of each edge; the short columns in the middle are joined in groups of five holes; the centre groove breaks the connection between the top and bottom halves.">
+  <title>D-3.1 — Breadboard internal connections</title>
+  <desc>A top-down schematic of a standard 830-point breadboard. Top and bottom edges show the long power rails (red plus, black minus) running the full length. The main field shows columns of five holes connected vertically by hidden metal strips. The centre groove separates the top half from the bottom half. One column is highlighted to show the group-of-five connection.</desc>
+
+  <style>
+    .title       { font: 600 18px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .sub         { font: 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .small       { font: 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .tiny        { font: 10px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #444; }
+    .callout     { font: 600 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .board       { fill: #ffffff; stroke: #111; stroke-width: 2; }
+    .strip-pos   { fill: #f7d9d9; stroke: #cc1f1f; stroke-width: 1.2; }
+    .strip-neg   { fill: #dadada; stroke: #111;    stroke-width: 1.2; }
+    .strip-col   { fill: #e6e6e6; stroke: #888;    stroke-width: 0.8; }
+    .strip-col-highlight { fill: #d7e8f8; stroke: #1f4f8a; stroke-width: 1.5; }
+    .hole        { fill: #ffffff; stroke: #444; stroke-width: 0.6; }
+    .groove      { fill: #cccccc; stroke: #444; stroke-width: 1; }
+    .marker      { stroke: #cc1f1f; stroke-width: 2; fill: none; }
+    .marker-blue { stroke: #1f4f8a; stroke-width: 2; fill: none; }
+    .arrow       { stroke: #111; stroke-width: 1.4; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 z" fill="#111"/>
+    </marker>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="1200" height="400" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="20" y="28" class="title">D-3.1 — How a breadboard is wired inside</text>
+  <text x="20" y="46" class="sub">Two long rails per edge run the full length. The middle columns are joined in groups of 5. The centre groove breaks the top and bottom halves apart.</text>
+
+  <!-- ============================================================ -->
+  <!--  Board outline                                                -->
+  <!-- ============================================================ -->
+  <rect x="40" y="80" width="1120" height="270" rx="6" class="board"/>
+
+  <!-- ============================================================ -->
+  <!--  TOP RAILS: + and - (run the full length)                     -->
+  <!-- ============================================================ -->
+  <!-- + rail strip backdrop -->
+  <rect x="60" y="96" width="1080" height="14" rx="2" class="strip-pos"/>
+  <text x="50" y="106" text-anchor="end" class="callout" fill="#cc1f1f">+</text>
+  <text x="1150" y="106" class="tiny">+5 V rail (red stripe)</text>
+
+  <!-- - rail strip backdrop -->
+  <rect x="60" y="114" width="1080" height="14" rx="2" class="strip-neg"/>
+  <text x="50" y="125" text-anchor="end" class="callout" fill="#111">−</text>
+  <text x="1150" y="125" class="tiny">GND rail (black/blue stripe)</text>
+
+  <!-- Holes on top + rail (50 holes shown) -->
+  <g>
+    <!-- 50 holes spaced ~21px -->
+    <g id="top-plus-holes">
+      <circle cx="72"  cy="103" r="2.2" class="hole"/>
+      <circle cx="93"  cy="103" r="2.2" class="hole"/>
+      <circle cx="114" cy="103" r="2.2" class="hole"/>
+      <circle cx="135" cy="103" r="2.2" class="hole"/>
+      <circle cx="156" cy="103" r="2.2" class="hole"/>
+      <circle cx="177" cy="103" r="2.2" class="hole"/>
+      <circle cx="198" cy="103" r="2.2" class="hole"/>
+      <circle cx="219" cy="103" r="2.2" class="hole"/>
+      <circle cx="240" cy="103" r="2.2" class="hole"/>
+      <circle cx="261" cy="103" r="2.2" class="hole"/>
+      <circle cx="282" cy="103" r="2.2" class="hole"/>
+      <circle cx="303" cy="103" r="2.2" class="hole"/>
+      <circle cx="324" cy="103" r="2.2" class="hole"/>
+      <circle cx="345" cy="103" r="2.2" class="hole"/>
+      <circle cx="366" cy="103" r="2.2" class="hole"/>
+      <circle cx="387" cy="103" r="2.2" class="hole"/>
+      <circle cx="408" cy="103" r="2.2" class="hole"/>
+      <circle cx="429" cy="103" r="2.2" class="hole"/>
+      <circle cx="450" cy="103" r="2.2" class="hole"/>
+      <circle cx="471" cy="103" r="2.2" class="hole"/>
+      <circle cx="492" cy="103" r="2.2" class="hole"/>
+      <circle cx="513" cy="103" r="2.2" class="hole"/>
+      <circle cx="534" cy="103" r="2.2" class="hole"/>
+      <circle cx="555" cy="103" r="2.2" class="hole"/>
+      <circle cx="576" cy="103" r="2.2" class="hole"/>
+      <circle cx="597" cy="103" r="2.2" class="hole"/>
+      <circle cx="618" cy="103" r="2.2" class="hole"/>
+      <circle cx="639" cy="103" r="2.2" class="hole"/>
+      <circle cx="660" cy="103" r="2.2" class="hole"/>
+      <circle cx="681" cy="103" r="2.2" class="hole"/>
+      <circle cx="702" cy="103" r="2.2" class="hole"/>
+      <circle cx="723" cy="103" r="2.2" class="hole"/>
+      <circle cx="744" cy="103" r="2.2" class="hole"/>
+      <circle cx="765" cy="103" r="2.2" class="hole"/>
+      <circle cx="786" cy="103" r="2.2" class="hole"/>
+      <circle cx="807" cy="103" r="2.2" class="hole"/>
+      <circle cx="828" cy="103" r="2.2" class="hole"/>
+      <circle cx="849" cy="103" r="2.2" class="hole"/>
+      <circle cx="870" cy="103" r="2.2" class="hole"/>
+      <circle cx="891" cy="103" r="2.2" class="hole"/>
+      <circle cx="912" cy="103" r="2.2" class="hole"/>
+      <circle cx="933" cy="103" r="2.2" class="hole"/>
+      <circle cx="954" cy="103" r="2.2" class="hole"/>
+      <circle cx="975" cy="103" r="2.2" class="hole"/>
+      <circle cx="996" cy="103" r="2.2" class="hole"/>
+      <circle cx="1017" cy="103" r="2.2" class="hole"/>
+      <circle cx="1038" cy="103" r="2.2" class="hole"/>
+      <circle cx="1059" cy="103" r="2.2" class="hole"/>
+      <circle cx="1080" cy="103" r="2.2" class="hole"/>
+      <circle cx="1101" cy="103" r="2.2" class="hole"/>
+    </g>
+    <!-- top - rail holes -->
+    <g id="top-minus-holes">
+      <!-- 50 holes -->
+      <circle cx="72"  cy="121" r="2.2" class="hole"/>
+      <circle cx="93"  cy="121" r="2.2" class="hole"/>
+      <circle cx="114" cy="121" r="2.2" class="hole"/>
+      <circle cx="135" cy="121" r="2.2" class="hole"/>
+      <circle cx="156" cy="121" r="2.2" class="hole"/>
+      <circle cx="177" cy="121" r="2.2" class="hole"/>
+      <circle cx="198" cy="121" r="2.2" class="hole"/>
+      <circle cx="219" cy="121" r="2.2" class="hole"/>
+      <circle cx="240" cy="121" r="2.2" class="hole"/>
+      <circle cx="261" cy="121" r="2.2" class="hole"/>
+      <circle cx="282" cy="121" r="2.2" class="hole"/>
+      <circle cx="303" cy="121" r="2.2" class="hole"/>
+      <circle cx="324" cy="121" r="2.2" class="hole"/>
+      <circle cx="345" cy="121" r="2.2" class="hole"/>
+      <circle cx="366" cy="121" r="2.2" class="hole"/>
+      <circle cx="387" cy="121" r="2.2" class="hole"/>
+      <circle cx="408" cy="121" r="2.2" class="hole"/>
+      <circle cx="429" cy="121" r="2.2" class="hole"/>
+      <circle cx="450" cy="121" r="2.2" class="hole"/>
+      <circle cx="471" cy="121" r="2.2" class="hole"/>
+      <circle cx="492" cy="121" r="2.2" class="hole"/>
+      <circle cx="513" cy="121" r="2.2" class="hole"/>
+      <circle cx="534" cy="121" r="2.2" class="hole"/>
+      <circle cx="555" cy="121" r="2.2" class="hole"/>
+      <circle cx="576" cy="121" r="2.2" class="hole"/>
+      <circle cx="597" cy="121" r="2.2" class="hole"/>
+      <circle cx="618" cy="121" r="2.2" class="hole"/>
+      <circle cx="639" cy="121" r="2.2" class="hole"/>
+      <circle cx="660" cy="121" r="2.2" class="hole"/>
+      <circle cx="681" cy="121" r="2.2" class="hole"/>
+      <circle cx="702" cy="121" r="2.2" class="hole"/>
+      <circle cx="723" cy="121" r="2.2" class="hole"/>
+      <circle cx="744" cy="121" r="2.2" class="hole"/>
+      <circle cx="765" cy="121" r="2.2" class="hole"/>
+      <circle cx="786" cy="121" r="2.2" class="hole"/>
+      <circle cx="807" cy="121" r="2.2" class="hole"/>
+      <circle cx="828" cy="121" r="2.2" class="hole"/>
+      <circle cx="849" cy="121" r="2.2" class="hole"/>
+      <circle cx="870" cy="121" r="2.2" class="hole"/>
+      <circle cx="891" cy="121" r="2.2" class="hole"/>
+      <circle cx="912" cy="121" r="2.2" class="hole"/>
+      <circle cx="933" cy="121" r="2.2" class="hole"/>
+      <circle cx="954" cy="121" r="2.2" class="hole"/>
+      <circle cx="975" cy="121" r="2.2" class="hole"/>
+      <circle cx="996" cy="121" r="2.2" class="hole"/>
+      <circle cx="1017" cy="121" r="2.2" class="hole"/>
+      <circle cx="1038" cy="121" r="2.2" class="hole"/>
+      <circle cx="1059" cy="121" r="2.2" class="hole"/>
+      <circle cx="1080" cy="121" r="2.2" class="hole"/>
+      <circle cx="1101" cy="121" r="2.2" class="hole"/>
+    </g>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  TOP HALF: vertical columns of 5 holes                        -->
+  <!-- ============================================================ -->
+  <!--
+       Strip pattern: a faint vertical rectangle shows each column's
+       internal connection (5 holes joined). We draw 30 columns x 5 holes.
+  -->
+  <g id="top-columns">
+    <!-- column rectangles (faint backing) -->
+    <!-- 30 columns from x=72 to x=1080 step ~35 -->
+    <g>
+      <!-- We programmatically lay out 30 column boxes -->
+      <!-- Each box: 8 wide, 60 tall, centred on x col-x, y 152..212 -->
+      <!-- Highlighted column index = 7 -->
+      <rect x="68"  y="148" width="8" height="64" class="strip-col"/>
+      <rect x="103" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="138" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="173" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="208" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="243" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="278" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="313" y="148" width="8" height="64" class="strip-col-highlight"/>
+      <rect x="348" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="383" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="418" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="453" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="488" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="523" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="558" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="593" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="628" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="663" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="698" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="733" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="768" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="803" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="838" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="873" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="908" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="943" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="978" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="1013" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="1048" y="148" width="8" height="64" class="strip-col"/>
+      <rect x="1083" y="148" width="8" height="64" class="strip-col"/>
+    </g>
+    <!-- 5 rows of holes on top half -->
+    <g>
+      <!-- For each row y, draw 30 holes spaced by 35 starting x=72 -->
+      <!-- row y values: 156, 168, 180, 192, 204 -->
+      <g>
+        <!-- y=156 -->
+        <circle cx="72"  cy="156" r="2.2" class="hole"/><circle cx="107" cy="156" r="2.2" class="hole"/><circle cx="142" cy="156" r="2.2" class="hole"/><circle cx="177" cy="156" r="2.2" class="hole"/><circle cx="212" cy="156" r="2.2" class="hole"/><circle cx="247" cy="156" r="2.2" class="hole"/><circle cx="282" cy="156" r="2.2" class="hole"/><circle cx="317" cy="156" r="2.2" class="hole"/><circle cx="352" cy="156" r="2.2" class="hole"/><circle cx="387" cy="156" r="2.2" class="hole"/><circle cx="422" cy="156" r="2.2" class="hole"/><circle cx="457" cy="156" r="2.2" class="hole"/><circle cx="492" cy="156" r="2.2" class="hole"/><circle cx="527" cy="156" r="2.2" class="hole"/><circle cx="562" cy="156" r="2.2" class="hole"/><circle cx="597" cy="156" r="2.2" class="hole"/><circle cx="632" cy="156" r="2.2" class="hole"/><circle cx="667" cy="156" r="2.2" class="hole"/><circle cx="702" cy="156" r="2.2" class="hole"/><circle cx="737" cy="156" r="2.2" class="hole"/><circle cx="772" cy="156" r="2.2" class="hole"/><circle cx="807" cy="156" r="2.2" class="hole"/><circle cx="842" cy="156" r="2.2" class="hole"/><circle cx="877" cy="156" r="2.2" class="hole"/><circle cx="912" cy="156" r="2.2" class="hole"/><circle cx="947" cy="156" r="2.2" class="hole"/><circle cx="982" cy="156" r="2.2" class="hole"/><circle cx="1017" cy="156" r="2.2" class="hole"/><circle cx="1052" cy="156" r="2.2" class="hole"/><circle cx="1087" cy="156" r="2.2" class="hole"/>
+      </g>
+      <g>
+        <!-- y=168 -->
+        <circle cx="72"  cy="168" r="2.2" class="hole"/><circle cx="107" cy="168" r="2.2" class="hole"/><circle cx="142" cy="168" r="2.2" class="hole"/><circle cx="177" cy="168" r="2.2" class="hole"/><circle cx="212" cy="168" r="2.2" class="hole"/><circle cx="247" cy="168" r="2.2" class="hole"/><circle cx="282" cy="168" r="2.2" class="hole"/><circle cx="317" cy="168" r="2.2" class="hole"/><circle cx="352" cy="168" r="2.2" class="hole"/><circle cx="387" cy="168" r="2.2" class="hole"/><circle cx="422" cy="168" r="2.2" class="hole"/><circle cx="457" cy="168" r="2.2" class="hole"/><circle cx="492" cy="168" r="2.2" class="hole"/><circle cx="527" cy="168" r="2.2" class="hole"/><circle cx="562" cy="168" r="2.2" class="hole"/><circle cx="597" cy="168" r="2.2" class="hole"/><circle cx="632" cy="168" r="2.2" class="hole"/><circle cx="667" cy="168" r="2.2" class="hole"/><circle cx="702" cy="168" r="2.2" class="hole"/><circle cx="737" cy="168" r="2.2" class="hole"/><circle cx="772" cy="168" r="2.2" class="hole"/><circle cx="807" cy="168" r="2.2" class="hole"/><circle cx="842" cy="168" r="2.2" class="hole"/><circle cx="877" cy="168" r="2.2" class="hole"/><circle cx="912" cy="168" r="2.2" class="hole"/><circle cx="947" cy="168" r="2.2" class="hole"/><circle cx="982" cy="168" r="2.2" class="hole"/><circle cx="1017" cy="168" r="2.2" class="hole"/><circle cx="1052" cy="168" r="2.2" class="hole"/><circle cx="1087" cy="168" r="2.2" class="hole"/>
+      </g>
+      <g>
+        <!-- y=180 -->
+        <circle cx="72"  cy="180" r="2.2" class="hole"/><circle cx="107" cy="180" r="2.2" class="hole"/><circle cx="142" cy="180" r="2.2" class="hole"/><circle cx="177" cy="180" r="2.2" class="hole"/><circle cx="212" cy="180" r="2.2" class="hole"/><circle cx="247" cy="180" r="2.2" class="hole"/><circle cx="282" cy="180" r="2.2" class="hole"/><circle cx="317" cy="180" r="2.2" class="hole"/><circle cx="352" cy="180" r="2.2" class="hole"/><circle cx="387" cy="180" r="2.2" class="hole"/><circle cx="422" cy="180" r="2.2" class="hole"/><circle cx="457" cy="180" r="2.2" class="hole"/><circle cx="492" cy="180" r="2.2" class="hole"/><circle cx="527" cy="180" r="2.2" class="hole"/><circle cx="562" cy="180" r="2.2" class="hole"/><circle cx="597" cy="180" r="2.2" class="hole"/><circle cx="632" cy="180" r="2.2" class="hole"/><circle cx="667" cy="180" r="2.2" class="hole"/><circle cx="702" cy="180" r="2.2" class="hole"/><circle cx="737" cy="180" r="2.2" class="hole"/><circle cx="772" cy="180" r="2.2" class="hole"/><circle cx="807" cy="180" r="2.2" class="hole"/><circle cx="842" cy="180" r="2.2" class="hole"/><circle cx="877" cy="180" r="2.2" class="hole"/><circle cx="912" cy="180" r="2.2" class="hole"/><circle cx="947" cy="180" r="2.2" class="hole"/><circle cx="982" cy="180" r="2.2" class="hole"/><circle cx="1017" cy="180" r="2.2" class="hole"/><circle cx="1052" cy="180" r="2.2" class="hole"/><circle cx="1087" cy="180" r="2.2" class="hole"/>
+      </g>
+      <g>
+        <!-- y=192 -->
+        <circle cx="72"  cy="192" r="2.2" class="hole"/><circle cx="107" cy="192" r="2.2" class="hole"/><circle cx="142" cy="192" r="2.2" class="hole"/><circle cx="177" cy="192" r="2.2" class="hole"/><circle cx="212" cy="192" r="2.2" class="hole"/><circle cx="247" cy="192" r="2.2" class="hole"/><circle cx="282" cy="192" r="2.2" class="hole"/><circle cx="317" cy="192" r="2.2" class="hole"/><circle cx="352" cy="192" r="2.2" class="hole"/><circle cx="387" cy="192" r="2.2" class="hole"/><circle cx="422" cy="192" r="2.2" class="hole"/><circle cx="457" cy="192" r="2.2" class="hole"/><circle cx="492" cy="192" r="2.2" class="hole"/><circle cx="527" cy="192" r="2.2" class="hole"/><circle cx="562" cy="192" r="2.2" class="hole"/><circle cx="597" cy="192" r="2.2" class="hole"/><circle cx="632" cy="192" r="2.2" class="hole"/><circle cx="667" cy="192" r="2.2" class="hole"/><circle cx="702" cy="192" r="2.2" class="hole"/><circle cx="737" cy="192" r="2.2" class="hole"/><circle cx="772" cy="192" r="2.2" class="hole"/><circle cx="807" cy="192" r="2.2" class="hole"/><circle cx="842" cy="192" r="2.2" class="hole"/><circle cx="877" cy="192" r="2.2" class="hole"/><circle cx="912" cy="192" r="2.2" class="hole"/><circle cx="947" cy="192" r="2.2" class="hole"/><circle cx="982" cy="192" r="2.2" class="hole"/><circle cx="1017" cy="192" r="2.2" class="hole"/><circle cx="1052" cy="192" r="2.2" class="hole"/><circle cx="1087" cy="192" r="2.2" class="hole"/>
+      </g>
+      <g>
+        <!-- y=204 -->
+        <circle cx="72"  cy="204" r="2.2" class="hole"/><circle cx="107" cy="204" r="2.2" class="hole"/><circle cx="142" cy="204" r="2.2" class="hole"/><circle cx="177" cy="204" r="2.2" class="hole"/><circle cx="212" cy="204" r="2.2" class="hole"/><circle cx="247" cy="204" r="2.2" class="hole"/><circle cx="282" cy="204" r="2.2" class="hole"/><circle cx="317" cy="204" r="2.2" class="hole"/><circle cx="352" cy="204" r="2.2" class="hole"/><circle cx="387" cy="204" r="2.2" class="hole"/><circle cx="422" cy="204" r="2.2" class="hole"/><circle cx="457" cy="204" r="2.2" class="hole"/><circle cx="492" cy="204" r="2.2" class="hole"/><circle cx="527" cy="204" r="2.2" class="hole"/><circle cx="562" cy="204" r="2.2" class="hole"/><circle cx="597" cy="204" r="2.2" class="hole"/><circle cx="632" cy="204" r="2.2" class="hole"/><circle cx="667" cy="204" r="2.2" class="hole"/><circle cx="702" cy="204" r="2.2" class="hole"/><circle cx="737" cy="204" r="2.2" class="hole"/><circle cx="772" cy="204" r="2.2" class="hole"/><circle cx="807" cy="204" r="2.2" class="hole"/><circle cx="842" cy="204" r="2.2" class="hole"/><circle cx="877" cy="204" r="2.2" class="hole"/><circle cx="912" cy="204" r="2.2" class="hole"/><circle cx="947" cy="204" r="2.2" class="hole"/><circle cx="982" cy="204" r="2.2" class="hole"/><circle cx="1017" cy="204" r="2.2" class="hole"/><circle cx="1052" cy="204" r="2.2" class="hole"/><circle cx="1087" cy="204" r="2.2" class="hole"/>
+      </g>
+    </g>
+    <!-- column labels (sparingly) -->
+    <text x="35" y="183" class="tiny" text-anchor="end">rows</text>
+    <text x="68" y="143" class="tiny" text-anchor="middle">a</text>
+    <text x="68" y="222" class="tiny" text-anchor="middle">e</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  CENTRE GROOVE                                                -->
+  <!-- ============================================================ -->
+  <rect x="60" y="216" width="1080" height="14" class="groove"/>
+  <text x="50" y="226" text-anchor="end" class="callout">↕</text>
+  <text x="1150" y="226" class="tiny">centre groove</text>
+
+  <!-- ============================================================ -->
+  <!--  BOTTOM HALF: vertical columns of 5 holes                     -->
+  <!-- ============================================================ -->
+  <g id="bottom-columns">
+    <g>
+      <rect x="68"  y="234" width="8" height="64" class="strip-col"/>
+      <rect x="103" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="138" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="173" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="208" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="243" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="278" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="313" y="234" width="8" height="64" class="strip-col-highlight"/>
+      <rect x="348" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="383" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="418" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="453" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="488" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="523" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="558" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="593" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="628" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="663" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="698" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="733" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="768" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="803" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="838" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="873" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="908" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="943" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="978" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="1013" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="1048" y="234" width="8" height="64" class="strip-col"/>
+      <rect x="1083" y="234" width="8" height="64" class="strip-col"/>
+    </g>
+    <g>
+      <!-- y=242 -->
+      <circle cx="72"  cy="242" r="2.2" class="hole"/><circle cx="107" cy="242" r="2.2" class="hole"/><circle cx="142" cy="242" r="2.2" class="hole"/><circle cx="177" cy="242" r="2.2" class="hole"/><circle cx="212" cy="242" r="2.2" class="hole"/><circle cx="247" cy="242" r="2.2" class="hole"/><circle cx="282" cy="242" r="2.2" class="hole"/><circle cx="317" cy="242" r="2.2" class="hole"/><circle cx="352" cy="242" r="2.2" class="hole"/><circle cx="387" cy="242" r="2.2" class="hole"/><circle cx="422" cy="242" r="2.2" class="hole"/><circle cx="457" cy="242" r="2.2" class="hole"/><circle cx="492" cy="242" r="2.2" class="hole"/><circle cx="527" cy="242" r="2.2" class="hole"/><circle cx="562" cy="242" r="2.2" class="hole"/><circle cx="597" cy="242" r="2.2" class="hole"/><circle cx="632" cy="242" r="2.2" class="hole"/><circle cx="667" cy="242" r="2.2" class="hole"/><circle cx="702" cy="242" r="2.2" class="hole"/><circle cx="737" cy="242" r="2.2" class="hole"/><circle cx="772" cy="242" r="2.2" class="hole"/><circle cx="807" cy="242" r="2.2" class="hole"/><circle cx="842" cy="242" r="2.2" class="hole"/><circle cx="877" cy="242" r="2.2" class="hole"/><circle cx="912" cy="242" r="2.2" class="hole"/><circle cx="947" cy="242" r="2.2" class="hole"/><circle cx="982" cy="242" r="2.2" class="hole"/><circle cx="1017" cy="242" r="2.2" class="hole"/><circle cx="1052" cy="242" r="2.2" class="hole"/><circle cx="1087" cy="242" r="2.2" class="hole"/>
+    </g>
+    <g>
+      <!-- y=254 -->
+      <circle cx="72"  cy="254" r="2.2" class="hole"/><circle cx="107" cy="254" r="2.2" class="hole"/><circle cx="142" cy="254" r="2.2" class="hole"/><circle cx="177" cy="254" r="2.2" class="hole"/><circle cx="212" cy="254" r="2.2" class="hole"/><circle cx="247" cy="254" r="2.2" class="hole"/><circle cx="282" cy="254" r="2.2" class="hole"/><circle cx="317" cy="254" r="2.2" class="hole"/><circle cx="352" cy="254" r="2.2" class="hole"/><circle cx="387" cy="254" r="2.2" class="hole"/><circle cx="422" cy="254" r="2.2" class="hole"/><circle cx="457" cy="254" r="2.2" class="hole"/><circle cx="492" cy="254" r="2.2" class="hole"/><circle cx="527" cy="254" r="2.2" class="hole"/><circle cx="562" cy="254" r="2.2" class="hole"/><circle cx="597" cy="254" r="2.2" class="hole"/><circle cx="632" cy="254" r="2.2" class="hole"/><circle cx="667" cy="254" r="2.2" class="hole"/><circle cx="702" cy="254" r="2.2" class="hole"/><circle cx="737" cy="254" r="2.2" class="hole"/><circle cx="772" cy="254" r="2.2" class="hole"/><circle cx="807" cy="254" r="2.2" class="hole"/><circle cx="842" cy="254" r="2.2" class="hole"/><circle cx="877" cy="254" r="2.2" class="hole"/><circle cx="912" cy="254" r="2.2" class="hole"/><circle cx="947" cy="254" r="2.2" class="hole"/><circle cx="982" cy="254" r="2.2" class="hole"/><circle cx="1017" cy="254" r="2.2" class="hole"/><circle cx="1052" cy="254" r="2.2" class="hole"/><circle cx="1087" cy="254" r="2.2" class="hole"/>
+    </g>
+    <g>
+      <!-- y=266 -->
+      <circle cx="72"  cy="266" r="2.2" class="hole"/><circle cx="107" cy="266" r="2.2" class="hole"/><circle cx="142" cy="266" r="2.2" class="hole"/><circle cx="177" cy="266" r="2.2" class="hole"/><circle cx="212" cy="266" r="2.2" class="hole"/><circle cx="247" cy="266" r="2.2" class="hole"/><circle cx="282" cy="266" r="2.2" class="hole"/><circle cx="317" cy="266" r="2.2" class="hole"/><circle cx="352" cy="266" r="2.2" class="hole"/><circle cx="387" cy="266" r="2.2" class="hole"/><circle cx="422" cy="266" r="2.2" class="hole"/><circle cx="457" cy="266" r="2.2" class="hole"/><circle cx="492" cy="266" r="2.2" class="hole"/><circle cx="527" cy="266" r="2.2" class="hole"/><circle cx="562" cy="266" r="2.2" class="hole"/><circle cx="597" cy="266" r="2.2" class="hole"/><circle cx="632" cy="266" r="2.2" class="hole"/><circle cx="667" cy="266" r="2.2" class="hole"/><circle cx="702" cy="266" r="2.2" class="hole"/><circle cx="737" cy="266" r="2.2" class="hole"/><circle cx="772" cy="266" r="2.2" class="hole"/><circle cx="807" cy="266" r="2.2" class="hole"/><circle cx="842" cy="266" r="2.2" class="hole"/><circle cx="877" cy="266" r="2.2" class="hole"/><circle cx="912" cy="266" r="2.2" class="hole"/><circle cx="947" cy="266" r="2.2" class="hole"/><circle cx="982" cy="266" r="2.2" class="hole"/><circle cx="1017" cy="266" r="2.2" class="hole"/><circle cx="1052" cy="266" r="2.2" class="hole"/><circle cx="1087" cy="266" r="2.2" class="hole"/>
+    </g>
+    <g>
+      <!-- y=278 -->
+      <circle cx="72"  cy="278" r="2.2" class="hole"/><circle cx="107" cy="278" r="2.2" class="hole"/><circle cx="142" cy="278" r="2.2" class="hole"/><circle cx="177" cy="278" r="2.2" class="hole"/><circle cx="212" cy="278" r="2.2" class="hole"/><circle cx="247" cy="278" r="2.2" class="hole"/><circle cx="282" cy="278" r="2.2" class="hole"/><circle cx="317" cy="278" r="2.2" class="hole"/><circle cx="352" cy="278" r="2.2" class="hole"/><circle cx="387" cy="278" r="2.2" class="hole"/><circle cx="422" cy="278" r="2.2" class="hole"/><circle cx="457" cy="278" r="2.2" class="hole"/><circle cx="492" cy="278" r="2.2" class="hole"/><circle cx="527" cy="278" r="2.2" class="hole"/><circle cx="562" cy="278" r="2.2" class="hole"/><circle cx="597" cy="278" r="2.2" class="hole"/><circle cx="632" cy="278" r="2.2" class="hole"/><circle cx="667" cy="278" r="2.2" class="hole"/><circle cx="702" cy="278" r="2.2" class="hole"/><circle cx="737" cy="278" r="2.2" class="hole"/><circle cx="772" cy="278" r="2.2" class="hole"/><circle cx="807" cy="278" r="2.2" class="hole"/><circle cx="842" cy="278" r="2.2" class="hole"/><circle cx="877" cy="278" r="2.2" class="hole"/><circle cx="912" cy="278" r="2.2" class="hole"/><circle cx="947" cy="278" r="2.2" class="hole"/><circle cx="982" cy="278" r="2.2" class="hole"/><circle cx="1017" cy="278" r="2.2" class="hole"/><circle cx="1052" cy="278" r="2.2" class="hole"/><circle cx="1087" cy="278" r="2.2" class="hole"/>
+    </g>
+    <g>
+      <!-- y=290 -->
+      <circle cx="72"  cy="290" r="2.2" class="hole"/><circle cx="107" cy="290" r="2.2" class="hole"/><circle cx="142" cy="290" r="2.2" class="hole"/><circle cx="177" cy="290" r="2.2" class="hole"/><circle cx="212" cy="290" r="2.2" class="hole"/><circle cx="247" cy="290" r="2.2" class="hole"/><circle cx="282" cy="290" r="2.2" class="hole"/><circle cx="317" cy="290" r="2.2" class="hole"/><circle cx="352" cy="290" r="2.2" class="hole"/><circle cx="387" cy="290" r="2.2" class="hole"/><circle cx="422" cy="290" r="2.2" class="hole"/><circle cx="457" cy="290" r="2.2" class="hole"/><circle cx="492" cy="290" r="2.2" class="hole"/><circle cx="527" cy="290" r="2.2" class="hole"/><circle cx="562" cy="290" r="2.2" class="hole"/><circle cx="597" cy="290" r="2.2" class="hole"/><circle cx="632" cy="290" r="2.2" class="hole"/><circle cx="667" cy="290" r="2.2" class="hole"/><circle cx="702" cy="290" r="2.2" class="hole"/><circle cx="737" cy="290" r="2.2" class="hole"/><circle cx="772" cy="290" r="2.2" class="hole"/><circle cx="807" cy="290" r="2.2" class="hole"/><circle cx="842" cy="290" r="2.2" class="hole"/><circle cx="877" cy="290" r="2.2" class="hole"/><circle cx="912" cy="290" r="2.2" class="hole"/><circle cx="947" cy="290" r="2.2" class="hole"/><circle cx="982" cy="290" r="2.2" class="hole"/><circle cx="1017" cy="290" r="2.2" class="hole"/><circle cx="1052" cy="290" r="2.2" class="hole"/><circle cx="1087" cy="290" r="2.2" class="hole"/>
+    </g>
+    <text x="68" y="313" class="tiny" text-anchor="middle">f</text>
+    <text x="68" y="234" class="tiny" text-anchor="middle"> </text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  BOTTOM RAILS                                                 -->
+  <!-- ============================================================ -->
+  <rect x="60" y="304" width="1080" height="14" rx="2" class="strip-neg"/>
+  <text x="50" y="315" text-anchor="end" class="callout" fill="#111">−</text>
+  <text x="1150" y="315" class="tiny">GND rail (independent)</text>
+  <rect x="60" y="322" width="1080" height="14" rx="2" class="strip-pos"/>
+  <text x="50" y="333" text-anchor="end" class="callout" fill="#cc1f1f">+</text>
+  <text x="1150" y="333" class="tiny">+5 V rail (independent)</text>
+
+  <!-- bottom + and - holes -->
+  <g>
+    <circle cx="72"  cy="311" r="2.2" class="hole"/><circle cx="93"  cy="311" r="2.2" class="hole"/><circle cx="114" cy="311" r="2.2" class="hole"/><circle cx="135" cy="311" r="2.2" class="hole"/><circle cx="156" cy="311" r="2.2" class="hole"/><circle cx="177" cy="311" r="2.2" class="hole"/><circle cx="198" cy="311" r="2.2" class="hole"/><circle cx="219" cy="311" r="2.2" class="hole"/><circle cx="240" cy="311" r="2.2" class="hole"/><circle cx="261" cy="311" r="2.2" class="hole"/><circle cx="282" cy="311" r="2.2" class="hole"/><circle cx="303" cy="311" r="2.2" class="hole"/><circle cx="324" cy="311" r="2.2" class="hole"/><circle cx="345" cy="311" r="2.2" class="hole"/><circle cx="366" cy="311" r="2.2" class="hole"/><circle cx="387" cy="311" r="2.2" class="hole"/><circle cx="408" cy="311" r="2.2" class="hole"/><circle cx="429" cy="311" r="2.2" class="hole"/><circle cx="450" cy="311" r="2.2" class="hole"/><circle cx="471" cy="311" r="2.2" class="hole"/><circle cx="492" cy="311" r="2.2" class="hole"/><circle cx="513" cy="311" r="2.2" class="hole"/><circle cx="534" cy="311" r="2.2" class="hole"/><circle cx="555" cy="311" r="2.2" class="hole"/><circle cx="576" cy="311" r="2.2" class="hole"/><circle cx="597" cy="311" r="2.2" class="hole"/><circle cx="618" cy="311" r="2.2" class="hole"/><circle cx="639" cy="311" r="2.2" class="hole"/><circle cx="660" cy="311" r="2.2" class="hole"/><circle cx="681" cy="311" r="2.2" class="hole"/><circle cx="702" cy="311" r="2.2" class="hole"/><circle cx="723" cy="311" r="2.2" class="hole"/><circle cx="744" cy="311" r="2.2" class="hole"/><circle cx="765" cy="311" r="2.2" class="hole"/><circle cx="786" cy="311" r="2.2" class="hole"/><circle cx="807" cy="311" r="2.2" class="hole"/><circle cx="828" cy="311" r="2.2" class="hole"/><circle cx="849" cy="311" r="2.2" class="hole"/><circle cx="870" cy="311" r="2.2" class="hole"/><circle cx="891" cy="311" r="2.2" class="hole"/><circle cx="912" cy="311" r="2.2" class="hole"/><circle cx="933" cy="311" r="2.2" class="hole"/><circle cx="954" cy="311" r="2.2" class="hole"/><circle cx="975" cy="311" r="2.2" class="hole"/><circle cx="996" cy="311" r="2.2" class="hole"/><circle cx="1017" cy="311" r="2.2" class="hole"/><circle cx="1038" cy="311" r="2.2" class="hole"/><circle cx="1059" cy="311" r="2.2" class="hole"/><circle cx="1080" cy="311" r="2.2" class="hole"/><circle cx="1101" cy="311" r="2.2" class="hole"/>
+  </g>
+  <g>
+    <circle cx="72"  cy="329" r="2.2" class="hole"/><circle cx="93"  cy="329" r="2.2" class="hole"/><circle cx="114" cy="329" r="2.2" class="hole"/><circle cx="135" cy="329" r="2.2" class="hole"/><circle cx="156" cy="329" r="2.2" class="hole"/><circle cx="177" cy="329" r="2.2" class="hole"/><circle cx="198" cy="329" r="2.2" class="hole"/><circle cx="219" cy="329" r="2.2" class="hole"/><circle cx="240" cy="329" r="2.2" class="hole"/><circle cx="261" cy="329" r="2.2" class="hole"/><circle cx="282" cy="329" r="2.2" class="hole"/><circle cx="303" cy="329" r="2.2" class="hole"/><circle cx="324" cy="329" r="2.2" class="hole"/><circle cx="345" cy="329" r="2.2" class="hole"/><circle cx="366" cy="329" r="2.2" class="hole"/><circle cx="387" cy="329" r="2.2" class="hole"/><circle cx="408" cy="329" r="2.2" class="hole"/><circle cx="429" cy="329" r="2.2" class="hole"/><circle cx="450" cy="329" r="2.2" class="hole"/><circle cx="471" cy="329" r="2.2" class="hole"/><circle cx="492" cy="329" r="2.2" class="hole"/><circle cx="513" cy="329" r="2.2" class="hole"/><circle cx="534" cy="329" r="2.2" class="hole"/><circle cx="555" cy="329" r="2.2" class="hole"/><circle cx="576" cy="329" r="2.2" class="hole"/><circle cx="597" cy="329" r="2.2" class="hole"/><circle cx="618" cy="329" r="2.2" class="hole"/><circle cx="639" cy="329" r="2.2" class="hole"/><circle cx="660" cy="329" r="2.2" class="hole"/><circle cx="681" cy="329" r="2.2" class="hole"/><circle cx="702" cy="329" r="2.2" class="hole"/><circle cx="723" cy="329" r="2.2" class="hole"/><circle cx="744" cy="329" r="2.2" class="hole"/><circle cx="765" cy="329" r="2.2" class="hole"/><circle cx="786" cy="329" r="2.2" class="hole"/><circle cx="807" cy="329" r="2.2" class="hole"/><circle cx="828" cy="329" r="2.2" class="hole"/><circle cx="849" cy="329" r="2.2" class="hole"/><circle cx="870" cy="329" r="2.2" class="hole"/><circle cx="891" cy="329" r="2.2" class="hole"/><circle cx="912" cy="329" r="2.2" class="hole"/><circle cx="933" cy="329" r="2.2" class="hole"/><circle cx="954" cy="329" r="2.2" class="hole"/><circle cx="975" cy="329" r="2.2" class="hole"/><circle cx="996" cy="329" r="2.2" class="hole"/><circle cx="1017" cy="329" r="2.2" class="hole"/><circle cx="1038" cy="329" r="2.2" class="hole"/><circle cx="1059" cy="329" r="2.2" class="hole"/><circle cx="1080" cy="329" r="2.2" class="hole"/><circle cx="1101" cy="329" r="2.2" class="hole"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Callout: arrow + label for the highlighted column            -->
+  <!-- ============================================================ -->
+  <g>
+    <!-- big arrow pointing at the highlighted column -->
+    <path d="M 220 90 L 305 145" class="arrow" marker-end="url(#arrowhead)"/>
+    <rect x="60" y="60" width="160" height="38" fill="#eef4fb" stroke="#1f4f8a" stroke-width="1.2" rx="4"/>
+    <text x="68" y="76" class="callout" fill="#1f4f8a">Group of 5 holes</text>
+    <text x="68" y="92" class="tiny" fill="#333">— all joined inside.</text>
+  </g>
+
+  <!-- Callout: rails go full length -->
+  <g>
+    <path d="M 980 60 L 850 95" class="arrow" marker-end="url(#arrowhead)"/>
+    <rect x="970" y="32" width="195" height="38" fill="#fdecec" stroke="#cc1f1f" stroke-width="1.2" rx="4"/>
+    <text x="978" y="48" class="callout" fill="#cc1f1f">Rails run end to end</text>
+    <text x="978" y="64" class="tiny" fill="#333">— one strip from left side to right side.</text>
+  </g>
+
+  <!-- Callout: groove breaks the halves -->
+  <g>
+    <path d="M 380 360 L 380 240" class="arrow" marker-end="url(#arrowhead)"/>
+    <rect x="290" y="362" width="220" height="32" fill="#f4f4f4" stroke="#444" stroke-width="1.2" rx="4"/>
+    <text x="300" y="380" class="callout">The centre groove breaks the columns</text>
+    <text x="300" y="392" class="tiny">— top half and bottom half do NOT touch.</text>
+  </g>
+</svg>

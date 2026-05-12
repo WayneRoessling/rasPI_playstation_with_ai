@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" role="img" aria-label="The voltage-as-water-pressure analogy: an elevated water tank, a pipe leaving the tank with a narrow section in the middle representing resistance, an outlet on the right with a flow gauge representing current, and a ground reference line at the bottom labelled sea level.">
+  <title>D-4.3 — Voltage as water pressure</title>
+  <desc>Pictogram showing an elevated water tank on the left. A pipe leaves the bottom of the tank and runs horizontally to the right with a narrow section in the middle. A gauge at the right outlet shows the flow rate. Labels: voltage equals water pressure (pointing at the tank height), current equals water flow rate (pointing at the gauge), resistance equals the narrow part of the hose (pointing at the narrow section), and ground equals sea level (pointing at the bottom reference line).</desc>
+
+  <style>
+    .title       { font: 600 18px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .sub         { font: 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .label-big   { font: 600 16px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .label       { font: 600 13px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #111; }
+    .small       { font: 12px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #333; }
+    .tiny        { font: 11px system-ui, -apple-system, Helvetica, Arial, sans-serif; fill: #555; }
+    .tank-outer  { fill: #ffffff; stroke: #111; stroke-width: 2.5; }
+    .tank-water  { fill: #cfe4f5; stroke: #1f4f8a; stroke-width: 1; }
+    .pipe        { fill: #ffffff; stroke: #111; stroke-width: 2.5; }
+    .water       { fill: #cfe4f5; }
+    .gauge-face  { fill: #ffffff; stroke: #111; stroke-width: 2; }
+    .gauge-tick  { stroke: #444; stroke-width: 1.2; }
+    .needle      { stroke: #cc1f1f; stroke-width: 2.5; }
+    .ground-line { stroke: #111; stroke-width: 2.5; stroke-dasharray: 8 5; fill: none; }
+    .arrow       { stroke: #111; stroke-width: 1.6; fill: none; }
+    .ladder      { stroke: #444; stroke-width: 1.2; fill: none; }
+    .pressure-tic { stroke: #cc1f1f; stroke-width: 1.4; }
+  </style>
+
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#111"/>
+    </marker>
+    <marker id="ah-flow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#1f4f8a"/>
+    </marker>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="900" height="500" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="20" y="28" class="title">D-4.3 — Voltage as water pressure</text>
+  <text x="20" y="46" class="sub">A tank of water on a roof drives water through a pipe. Tank height ≈ voltage. Narrow pipe ≈ resistance. Gauge reading ≈ current. Sea level ≈ ground.</text>
+
+  <!-- ============================================================ -->
+  <!--  Sea-level (ground) reference line                            -->
+  <!-- ============================================================ -->
+  <line x1="40" y1="440" x2="860" y2="440" class="ground-line"/>
+  <g>
+    <text x="60" y="460" class="label">Ground = sea level</text>
+    <text x="60" y="475" class="tiny">every voltage is measured up from this line, just like every height is measured up from sea level.</text>
+  </g>
+  <!-- little sea-level arrow -->
+  <path d="M 770 460 L 770 442" class="arrow" marker-end="url(#ah)"/>
+
+  <!-- ============================================================ -->
+  <!--  Water tank (elevated)                                        -->
+  <!-- ============================================================ -->
+  <g id="tank">
+    <!-- support legs -->
+    <rect x="120" y="280" width="10" height="160" fill="#111"/>
+    <rect x="220" y="280" width="10" height="160" fill="#111"/>
+    <!-- tank body -->
+    <rect x="100" y="120" width="150" height="170" rx="8" class="tank-outer"/>
+    <!-- water inside (top region empty, lower 70% blue) -->
+    <rect x="103" y="160" width="144" height="127" rx="4" class="tank-water"/>
+    <!-- water surface wave (decorative) -->
+    <path d="M 103 160 Q 130 154, 160 160 T 220 160 T 247 160" fill="none" stroke="#1f4f8a" stroke-width="1.2"/>
+    <!-- tank label -->
+    <text x="175" y="145" text-anchor="middle" class="label-big">water tank</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Height ladder (voltage scale)                                -->
+  <!-- ============================================================ -->
+  <g id="height-scale">
+    <line x1="70" y1="180" x2="70" y2="440" class="ladder"/>
+    <!-- tick marks at 0, ~2.5V, ~5V -->
+    <line x1="64" y1="440" x2="76" y2="440" class="ladder"/>
+    <line x1="64" y1="310" x2="76" y2="310" class="ladder"/>
+    <line x1="64" y1="180" x2="76" y2="180" class="ladder"/>
+    <text x="60" y="444" text-anchor="end" class="tiny">0 V</text>
+    <text x="60" y="314" text-anchor="end" class="tiny">3.3 V</text>
+    <text x="60" y="184" text-anchor="end" class="tiny">5 V</text>
+    <!-- big "pressure" arrow alongside -->
+    <path d="M 85 430 L 85 200" class="arrow" marker-end="url(#ah)" stroke="#cc1f1f" stroke-width="2"/>
+    <text x="44" y="290" class="label" transform="rotate(-90 44 290)" fill="#cc1f1f">tank height = pressure</text>
+  </g>
+
+  <!-- "Voltage = pressure" callout pointing at tank height -->
+  <g>
+    <rect x="270" y="160" width="190" height="60" fill="#fdecec" stroke="#cc1f1f" stroke-width="1.4" rx="6"/>
+    <text x="278" y="180" class="label" fill="#cc1f1f">Voltage = water pressure</text>
+    <text x="278" y="198" class="tiny">The taller the tank, the harder the water</text>
+    <text x="278" y="212" class="tiny">pushes out the pipe. 5 V = bigger push than 3.3 V.</text>
+    <path d="M 270 190 L 250 220" class="arrow" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Pipe going down from tank, across the page, narrow section,  -->
+  <!--  outlet on the right.                                         -->
+  <!-- ============================================================ -->
+  <g id="pipe">
+    <!-- downpipe -->
+    <rect x="160" y="290" width="30" height="100" class="pipe"/>
+    <!-- water in downpipe -->
+    <rect x="163" y="290" width="24" height="100" class="water"/>
+    <!-- horizontal pipe (left segment) -->
+    <rect x="160" y="385" width="220" height="30" class="pipe"/>
+    <rect x="163" y="388" width="217" height="24" class="water"/>
+    <!-- narrow section (resistor analog) -->
+    <rect x="380" y="395" width="100" height="10" class="pipe"/>
+    <rect x="381" y="397" width="98" height="7" class="water"/>
+    <!-- horizontal pipe (right segment) -->
+    <rect x="480" y="385" width="200" height="30" class="pipe"/>
+    <rect x="483" y="388" width="197" height="24" class="water"/>
+
+    <!-- outlet (faucet stub) -->
+    <rect x="680" y="385" width="20" height="30" class="pipe"/>
+    <!-- gauge body -->
+    <circle cx="775" cy="380" r="55" class="gauge-face"/>
+    <!-- gauge ticks (semicircle) -->
+    <g class="gauge-tick">
+      <line x1="725" y1="380" x2="735" y2="380"/>
+      <line x1="740" y1="345" x2="747" y2="352"/>
+      <line x1="775" y1="330" x2="775" y2="340"/>
+      <line x1="810" y1="345" x2="803" y2="352"/>
+      <line x1="825" y1="380" x2="815" y2="380"/>
+    </g>
+    <!-- gauge needle -->
+    <line x1="775" y1="380" x2="800" y2="350" class="needle"/>
+    <!-- gauge centre dot -->
+    <circle cx="775" cy="380" r="3" fill="#111"/>
+    <!-- gauge label -->
+    <text x="775" y="400" text-anchor="middle" class="tiny">flow gauge</text>
+    <!-- connector pipe from outlet to gauge -->
+    <rect x="700" y="392" width="20" height="16" class="pipe"/>
+    <rect x="700" y="394" width="20" height="12" class="water"/>
+
+    <!-- water-flow arrows along the pipe -->
+    <g stroke="#1f4f8a" stroke-width="2">
+      <path d="M 240 400 L 280 400" marker-end="url(#ah-flow)"/>
+      <path d="M 540 400 L 580 400" marker-end="url(#ah-flow)"/>
+    </g>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Callout: resistance (narrow section)                         -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="350" y="280" width="200" height="60" fill="#f4f4f4" stroke="#444" stroke-width="1.4" rx="6"/>
+    <text x="360" y="300" class="label">Resistance = narrow part</text>
+    <text x="360" y="316" class="tiny">A skinnier pipe lets less water through —</text>
+    <text x="360" y="330" class="tiny">even when the pressure is the same.</text>
+    <path d="M 430 340 L 430 390" class="arrow" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Callout: current (flow rate)                                 -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="660" y="180" width="210" height="86" fill="#eef4fb" stroke="#1f4f8a" stroke-width="1.4" rx="6"/>
+    <text x="670" y="200" class="label" fill="#1f4f8a">Current = flow rate</text>
+    <text x="670" y="216" class="tiny">How much water per second is actually</text>
+    <text x="670" y="230" class="tiny">moving past a point in the pipe. The gauge</text>
+    <text x="670" y="244" class="tiny">reads more when pressure is up, less when</text>
+    <text x="670" y="258" class="tiny">the narrow section is, well, narrower.</text>
+    <path d="M 775 270 L 775 326" class="arrow" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!--  Recap strip at the bottom                                    -->
+  <!-- ============================================================ -->
+  <g>
+    <rect x="40" y="447" width="820" height="36" fill="#ffffff" stroke="#ccc" stroke-width="1" rx="4"/>
+    <text x="56" y="468" class="small">
+      <tspan font-weight="700" fill="#cc1f1f">Voltage (V)</tspan>
+      <tspan> = water pressure   ·   </tspan>
+      <tspan font-weight="700" fill="#1f4f8a">Current (A)</tspan>
+      <tspan> = flow rate   ·   </tspan>
+      <tspan font-weight="700">Resistance (Ω)</tspan>
+      <tspan> = narrow part of the pipe   ·   </tspan>
+      <tspan font-weight="700">GND</tspan>
+      <tspan> = sea level (the zero everyone agrees on)</tspan>
+    </text>
+  </g>
+</svg>
