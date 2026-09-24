@@ -78,8 +78,17 @@ The old standalone `phase2_os_setup.py` was removed; phase 2 lives only in `setu
 | `fast` *(default)* | llama3.2:1b | moondream | ~3.5GB |
 | `smart` | llama3.2:3b | llava:7b | ~7GB |
 
-Persistent choice lives at `~/.config/mini-ai/config.json` on the Pi.
-Env vars `MINI_AI_TEXT_MODEL` / `MINI_AI_VISION_MODEL` / `MINI_AI_VOICE` / `MINI_AI_VOLUME` override the file.
+Persistent choices (preset, voice, personality, volume, mic sensitivity) live at
+`~/.config/mini-ai/config.json` on the Pi, set from the desktop pickers and the
+control panel. Env vars override the file: `MINI_AI_PRESET`, `MINI_AI_TEXT_MODEL`,
+`MINI_AI_VISION_MODEL`, `MINI_AI_VOICE`, `MINI_AI_VOLUME`, `MINI_AI_PERSONALITY`,
+`MINI_AI_VAD_THRESHOLD`, `MINI_AI_VAD_SILENCE_MS`. Other runtime knobs:
+`MINI_AI_KEEP_ALIVE`, `MINI_AI_VAD`, `MINI_AI_MAX_UTTERANCE`, and the scenario
+console's `MINI_AI_OVERLAY*` (see README → Configuration).
+
+The scenario console (`MINI_AI_OVERLAY=true`) uses `qwen2.5:14b` by default —
+expect it to be slow on the Pi's CPU; measure during Phase E and consider a
+smaller tool-capable model.
 
 ---
 
@@ -88,14 +97,30 @@ Env vars `MINI_AI_TEXT_MODEL` / `MINI_AI_VISION_MODEL` / `MINI_AI_VOICE` / `MINI
 | Script | Purpose |
 |--------|---------|
 | `setup_all.py` | Full setup Phases 2-8 (`--from N` / `--only N` to resume; `--only 8` redeploys app code) |
+| `pi_ssh.py` | Shared SSH helpers used by the workstation scripts (reads `.env`) |
 | `test_pi_state.py` | 13-point health check (all phases) |
-| `test_e2e_pipeline.py` | E2E pipeline: TTS→STT→LLM→Vision→TTS |
-| `voice_pipeline.py` | The live voice assistant |
+| `test_e2e_pipeline.py` | E2E pipeline on the Pi: TTS→STT→LLM→Vision→TTS |
+| `voice_pipeline.py` | The live voice assistant (plain voice mode + scenario console mode) |
+| `mini_ai_panel.py` | Tk control panel: voice, personality, volume, mic sensitivity + meter |
+| `mini_ai_config.py` | Presets, voices, personalities, saved settings (`config.json`) |
+| `desktop/` | Pi desktop launchers + model/voice pickers (installed by phase 8) |
+| `overlay/` | Scenario console: HAL protocol, simulator, RP2040 firmware, scenarios, scene tests — see `overlay/README.md` |
 | `push_key.py` | One-time SSH key push (password auth, delete `MINI_AI_PASS` after) |
 | `find_and_push_key.py` | Auto-detect Pi IP + push key |
 | `check_state.py` | Quick Pi diagnostics |
-| `repair_pi_rootfs.sh` | WSL2-based rootfs repair (not needed for NVMe path) |
-| `mini_ai_panel.py` | Interactive control panel |
+| `requirements.txt` / `requirements-pi.txt` | Pinned deps: workstation / Pi venv |
+| `archive/` | Superseded plans and SD-card-era tools (PLAN-MAI-001/002, `repair_pi_rootfs.sh`) |
+
+## Development
+
+- CI (`.github/workflows/ci.yml`) runs on every PR: ruff, `validate_canonical.py`,
+  emitted-YAML sync, `test_ptt_smoke`, scene tests against the simulator (mock
+  mode), `tests/test_voice_pipeline.py`, and a pinned-deps import of the setup scripts.
+- Run the same locally from the repo root:
+  `python -m ruff check .`, `python tests/test_voice_pipeline.py`,
+  `python -m overlay.scenario.test_ptt_smoke`, and (with the simulator running)
+  `python overlay/tools/run_scenes.py --all --mode mock`.
+- The repo is public: keep IPs, usernames and secrets in `.env` / `CLAUDE.local.md`.
 
 ---
 

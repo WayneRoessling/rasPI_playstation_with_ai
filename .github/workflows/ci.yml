@@ -34,7 +34,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt
       - name: Pinned deps install and the setup scripts import
-        run: python -c "import pi_ssh, setup_all; print(len(setup_all.PHASES), 'phases')"
+        run: python -c "import pi_ssh, setup_all; print(len(setup_all.PHASES), 'phases'); print(setup_all.pi_pins('opencv-python-headless', 'numpy', 'piper-tts', 'onnxruntime'))"
 
   overlay:
     name: overlay checks + scene tests
