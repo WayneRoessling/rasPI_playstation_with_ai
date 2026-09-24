@@ -367,6 +367,67 @@ def _clamp_volume(gain: float) -> float:
     return max(MIN_VOLUME_GAIN, min(MAX_VOLUME_GAIN, gain))
 
 
+# ── Voice sensitivity (end-of-speech detection) ──────────────────────────────
+#
+# vad_threshold: mic loudness (int16 RMS) that counts as speech. 0 = auto,
+#   i.e. calibrated from the room noise at the start of every turn.
+#   Lower = more sensitive (quiet voices are heard, but noise can trigger it).
+# vad_silence_ms: how long a pause ends the utterance. Raise it if you get
+#   cut off mid-sentence; lower it for snappier replies.
+# Env vars MINI_AI_VAD_THRESHOLD / MINI_AI_VAD_SILENCE_MS override the file.
+
+VAD_THRESHOLD_AUTO = 0.0
+MIN_VAD_THRESHOLD = 100.0
+MAX_VAD_THRESHOLD = 4000.0
+DEFAULT_VAD_SILENCE_MS = 800
+MIN_VAD_SILENCE_MS = 300
+MAX_VAD_SILENCE_MS = 3000
+
+
+def _clamp_vad_threshold(value: float) -> float:
+    if value <= VAD_THRESHOLD_AUTO:
+        return VAD_THRESHOLD_AUTO
+    return max(MIN_VAD_THRESHOLD, min(MAX_VAD_THRESHOLD, value))
+
+
+def _clamp_vad_silence_ms(value: float) -> int:
+    return int(max(MIN_VAD_SILENCE_MS, min(MAX_VAD_SILENCE_MS, value)))
+
+
+def _env_float(name: str) -> float | None:
+    raw = os.environ.get(name, "").strip()
+    try:
+        return float(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def load_vad_threshold() -> float:
+    """Speech threshold (int16 RMS), or 0.0 for automatic calibration."""
+    env = _env_float("MINI_AI_VAD_THRESHOLD")
+    if env is not None:
+        return _clamp_vad_threshold(env)
+    return _clamp_vad_threshold(float(_read_config().get("vad_threshold", VAD_THRESHOLD_AUTO)))
+
+
+def save_vad_threshold(value: float) -> None:
+    """Persist the speech threshold (0 = auto)."""
+    _write_config({"vad_threshold": _clamp_vad_threshold(value)})
+
+
+def load_vad_silence_ms() -> int:
+    """Pause length (ms) that ends an utterance."""
+    env = _env_float("MINI_AI_VAD_SILENCE_MS")
+    if env is not None:
+        return _clamp_vad_silence_ms(env)
+    return _clamp_vad_silence_ms(float(_read_config().get("vad_silence_ms", DEFAULT_VAD_SILENCE_MS)))
+
+
+def save_vad_silence_ms(value: int) -> None:
+    """Persist the end-of-utterance pause length."""
+    _write_config({"vad_silence_ms": _clamp_vad_silence_ms(value)})
+
+
 if __name__ == "__main__":
     # Quick CLI: print active preset, voice, personality, and volume
     p = load_preset()

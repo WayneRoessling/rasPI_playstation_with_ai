@@ -139,7 +139,8 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 | Saved preset / voice / personality / volume (Pi) | `~/.config/mini-ai/config.json`, set via the desktop pickers |
 | One-off overrides (Pi) | `MINI_AI_PRESET`, `MINI_AI_TEXT_MODEL`, `MINI_AI_VISION_MODEL`, `MINI_AI_VOICE`, `MINI_AI_VOLUME`, `MINI_AI_PERSONALITY` |
 | Scenario console (Pi) | `MINI_AI_OVERLAY=true`, `MINI_AI_OVERLAY_SCENARIO`, `MINI_AI_OVERLAY_HAL`, `MINI_AI_OVERLAY_MODEL` |
-| Responsiveness (Pi) | `MINI_AI_KEEP_ALIVE` (how long models stay loaded, default `30m`), `MINI_AI_VAD=0` (fixed 10s recording instead of stop-on-silence), `MINI_AI_VAD_SILENCE_MS` (default 800), `MINI_AI_VAD_THRESHOLD` (fixed mic threshold), `MINI_AI_MAX_UTTERANCE` (default 15s) |
+| Mic sensitivity (Pi) | **Control panel → Mic sensitivity**: Auto or a manual Sensitivity, the Pause that ends an utterance, and a live mic meter. Saved to `config.json`; `MINI_AI_VAD_THRESHOLD` / `MINI_AI_VAD_SILENCE_MS` override |
+| Responsiveness (Pi) | `MINI_AI_KEEP_ALIVE` (how long models stay loaded, default `30m`), `MINI_AI_VAD=0` (fixed 10s recording instead of stop-on-silence), `MINI_AI_MAX_UTTERANCE` (default 15s) |
 
 For convenient access, add an `~/.ssh/config` entry on the workstation:
 
