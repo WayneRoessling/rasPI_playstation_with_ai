@@ -49,7 +49,10 @@ function nowMs() {
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────
-const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/hal`;
+// Pass through ?token= from the page URL when the server requires HAL_SIM_TOKEN.
+const simToken = new URLSearchParams(location.search).get("token");
+const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/hal` +
+  (simToken ? `?token=${encodeURIComponent(simToken)}` : "");
 wsUrlEl.textContent = wsUrl;
 let ws = null;
 
@@ -193,23 +196,38 @@ $("key-pos").addEventListener("change", (e) => {
 
 // ── Command handlers (Pi → user) ──────────────────────────────────────────
 function handleCommand(msg) {
-  switch (msg.t) {
-    case "led":       renderLedOne(msg.id, msg.v ?? 255); break;
-    case "leds":      renderLedBulk(msg.values, msg.format || "hex_pairs"); break;
-    case "lcd":       renderLcdLine(msg.line, msg.text || ""); break;
-    case "lcd_clear": renderLcdLine(1, "                "); renderLcdLine(2, "                "); break;
-    case "oled":      renderOled(msg.display, msg.layout, msg.data || {}); break;
-    case "sfx":       fireSfx(msg.slot, msg.pulse_ms || 100); break;
-    case "sfx_seq":   fireSfxSeq(msg.slot, msg.count || 1, msg.interval_ms || 1000); break;
-    case "sync":      emitSync(); break;
-    case "reset":     doReset(); break;
-    // events from the Pi side are echoed back — ignore quietly
-    case "hello": case "ready": case "heartbeat":
-    case "switch": case "ptt": case "pir": case "key":
-    case "ack": case "err": case "wake": case "intent": case "nicla_hello":
-      break;
-    default:
-      logRaw("err", `unknown command: ${msg.t}`);
+  // Like the firmware, ack every command that carries a tracking id so the
+  // Pi can't tell the simulator from real hardware. `led` uses `id` for the
+  // LED number; its tracking id is `id_msg` (HAL_PROTOCOL.md §5.1).
+  const trackingId = msg.t === "led" ? msg.id_msg : msg.id;
+  const ack = (ok, err) => {
+    if (trackingId === undefined || trackingId === null) return;
+    send(err ? { t: "ack", of: trackingId, ok, err } : { t: "ack", of: trackingId, ok });
+  };
+  try {
+    switch (msg.t) {
+      case "led":       renderLedOne(msg.id, msg.v ?? 255); break;
+      case "leds":      renderLedBulk(msg.values, msg.format || "hex_pairs"); break;
+      case "lcd":       renderLcdLine(msg.line, msg.text || ""); break;
+      case "lcd_clear": renderLcdLine(1, "                "); renderLcdLine(2, "                "); break;
+      case "oled":      renderOled(msg.display, msg.layout, msg.data || {}); break;
+      case "sfx":       fireSfx(msg.slot, msg.pulse_ms || 100); break;
+      case "sfx_seq":   fireSfxSeq(msg.slot, msg.count || 1, msg.interval_ms || 1000); break;
+      case "sync":      ack(true); emitSync(); return;   // spec: ack first, then the state dump
+      case "reset":     doReset(); break;
+      // events from the Pi side are echoed back — ignore quietly
+      case "hello": case "ready": case "heartbeat":
+      case "switch": case "ptt": case "pir": case "key":
+      case "ack": case "err": case "wake": case "intent": case "nicla_hello":
+        return;
+      default:
+        logRaw("err", `unknown command: ${msg.t}`);
+        ack(false, `unknown type ${msg.t}`);
+        return;
+    }
+    ack(true);
+  } catch (e) {
+    ack(false, String(e));
   }
 }
 

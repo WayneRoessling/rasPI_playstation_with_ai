@@ -30,7 +30,8 @@ def ms_now() -> int:
 
 def handle_command(msg, peris, proto):
     t = msg.get("t")
-    msg_id = msg.get("id")
+    # `led` carries the LED number in `id`; its tracking id is `id_msg` (HAL_PROTOCOL §5.1)
+    msg_id = msg.get("id_msg") if t == "led" else msg.get("id")
     try:
         if t == "led":
             peris.leds.set_one(msg["id"], msg.get("v", 255))

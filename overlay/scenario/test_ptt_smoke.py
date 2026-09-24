@@ -233,6 +233,24 @@ def test_hal_detects_transport_drop():
     print("  hal_drop:      OK")
 
 
+def test_led_tracking_id():
+    """`led` keeps the LED number in `id`; its tracking id goes in `id_msg`."""
+    import json
+    from overlay.pi5_hal.client import HalClient
+    from overlay.pi5_hal.transport import MockTransport
+
+    transport = MockTransport()
+    hal = HalClient(transport)
+    hal.connect(send_sync=False)
+    first = hal.set_led(7, on=True)
+    second = hal.set_led(7, on=False)
+    hal.disconnect()
+    frames = [json.loads(line) for line in transport.sent]
+    assert [f["id"] for f in frames] == [7, 7], frames
+    assert [f["id_msg"] for f in frames] == [first, second] and first != second, frames
+    print("  led_id_msg:    OK")
+
+
 def main() -> int:
     print("PTT streaming-recording smoke test")
     try:
@@ -241,6 +259,7 @@ def main() -> int:
         test_stop_while_waiting()
         test_disconnect_while_waiting()
         test_hal_detects_transport_drop()
+        test_led_tracking_id()
     except AssertionError as exc:
         print(f"FAIL: {exc}")
         return 1

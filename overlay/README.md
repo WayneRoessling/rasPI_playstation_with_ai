@@ -84,6 +84,8 @@ overlay/
 │   ├── runtime.py                  ✓ Scenario, ScenarioRuntime, arm-gate
 │   ├── tools.py                    ✓ Tool dataclass + 9 generic LLM tools
 │   ├── llm.py                      ✓ Ollama /api/chat tool-use loop
+│   ├── loader.py                   ✓ build a Scenario from its emitted YAML
+│   ├── sequences.py                ✓ cancellable background countdowns/ramps
 │   ├── test_console.py             ✓ minimal pipeline-verification scenario
 │   ├── demo.py                     ✓ `python -m overlay.scenario.demo`
 │   └── README.md                   ✓

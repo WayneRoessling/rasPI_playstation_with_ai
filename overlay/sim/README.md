@@ -21,11 +21,26 @@ difference.
 ```bash
 cd overlay/sim
 pip install -r requirements.txt
-uvicorn server:app --host 0.0.0.0 --port 8765
+uvicorn server:app --port 8765
 ```
 
 Open http://localhost:8765/ in any modern browser. Point the Pi-side
-HAL client at `ws://<host>:8765/hal`.
+HAL client at `ws://127.0.0.1:8765/hal`.
+
+### Exposing it on the LAN
+
+Any client of `/hal` can inject panel events — including turning the
+safety key to `ARM`, which unlocks arm-gated tools. The server rejects
+browser connections from pages it didn't serve (Origin ≠ Host). Before
+binding to the network, also set a shared token:
+
+```bash
+HAL_SIM_TOKEN=some-secret uvicorn server:app --host 0.0.0.0 --port 8765
+```
+
+Then open `http://<host>:8765/?token=some-secret` and point the HAL
+client (`MINI_AI_OVERLAY_HAL`, `run_scenes.py --sim`) at
+`ws://<host>:8765/hal?token=some-secret`.
 
 ## What's simulated
 

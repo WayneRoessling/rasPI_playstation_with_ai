@@ -57,15 +57,17 @@ steps:
     expect:
       state.key: ARM
 
-  # 4. Retry the launch — should succeed. The exact ordering of tool
-  #    calls inside the runtime is fixed (initiate_launch_sequence runs
-  #    the whole countdown internally), so we can assert on the LED and
-  #    LCD endpoints. The 10-second sleep inside the tool is real, so
-  #    this step takes ≈10s + the LLM round-trip.
+  # 4. Retry the launch — should succeed. The tool returns as soon as
+  #    the countdown starts (it runs in the background), so right away
+  #    only the first countdown LED (11) is lit.
   - utterance: "begin launch sequence"
     expect:
       tool_calls_include:
-        - {name: initiate_launch_sequence, result_matches: "ok: launch sequence complete"}
+        - {name: initiate_launch_sequence, result_matches: "^ok: launch countdown started"}
+
+  # 5. Let the 10-second countdown finish, then check the T-0 endpoint.
+  - wait: 10500
+    expect:
       lcd_line_1: "LIFTOFF"
       lcd_line_2: "T-00"
       # All 10 countdown LEDs (11..20) should be lit at T-0.

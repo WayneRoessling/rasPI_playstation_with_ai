@@ -1,0 +1,44 @@
+# space_command_hold
+#
+# Verifies that hold_countdown actually stops a running launch countdown.
+# The countdown runs in the background (overlay/scenario/sequences.py), so
+# a hold issued mid-countdown freezes it where it is: LEDs 11..13 stay lit,
+# the rest of the countdown never happens, and LCD line 1 shows HOLD
+# instead of LIFTOFF.
+#
+# Timing: countdown LEDs light at t=0, 1, 2, 3 s ... The hold lands at
+# ~2.5 s, half a tick away from either neighbour.
+
+name: "space command — hold stops the countdown"
+scenario: space_command_launch
+mode: llm
+model: qwen2.5:14b
+
+setup:
+  key: ARM
+  switches: {1: on, 2: on, 3: on, 4: off, 5: on, 6: off, 7: on, 8: off, 9: off, 10: off}
+
+steps:
+  - utterance: "begin launch sequence"
+    expect:
+      tool_calls_include:
+        - {name: initiate_launch_sequence, result_matches: "^ok: launch countdown started"}
+
+  - wait: 2500
+
+  - utterance: "hold the countdown"
+    expect:
+      tool_calls_include:
+        - {name: hold_countdown, result_matches: "launch countdown stopped"}
+
+  # Well past where T-0 would have been: nothing moved after the hold.
+  - wait: 9000
+    expect:
+      lcd_line_1: "HOLD"
+      leds_on: [9, 11, 12, 13]
+
+scripted_tool_calls:
+  "begin launch sequence":
+    - {name: initiate_launch_sequence}
+  "hold the countdown":
+    - {name: hold_countdown}

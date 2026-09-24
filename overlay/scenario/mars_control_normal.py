@@ -18,30 +18,15 @@ Three scenario-specific tools, none arm-gated:
 
 from __future__ import annotations
 
-import sys
-import time
 from pathlib import Path
 from typing import Optional
 
-try:
-    import yaml
-except ImportError:
-    sys.stderr.write("pyyaml required: pip install pyyaml\n")
-    raise
-
 from .runtime import Scenario
-from .tools import GENERIC_TOOLS, Tool
+from . import sequences
+from .loader import build_from_emitted
+from .tools import Tool
 
 
-OVERLAY_ROOT = Path(__file__).resolve().parent.parent
-EMITTED_YAML = (
-    OVERLAY_ROOT
-    / "narratives"
-    / "scenarios"
-    / "mars_control_normal"
-    / "_emitted"
-    / "scenario.yaml"
-)
 
 
 SWITCH_LABELS: dict[int, str] = {
@@ -77,16 +62,22 @@ def _exec_daily_systems_check(hal, args: dict) -> str:
     hal.write_lcd(1, "DAILY CHECK")
     hal.write_lcd(2, "STEP 0/10")
 
+    # The 10-step check runs in the background so the conversation continues.
+    sequences.start(hal, "daily systems check", _run_daily_check)
+    return "ok: daily systems check started; 10 steps, about 10 seconds"
+
+
+def _run_daily_check(hal, cancelled) -> None:
     for step in range(1, 11):
         hal.set_led(10 + step, on=True)
         hal.write_lcd(2, f"STEP {step}/10")
         hal.play_sfx(9)                   # SFX-TICK
-        time.sleep(1.0)
+        if cancelled.wait(1.0):
+            return
 
     hal.write_lcd(1, "CHECK COMPLETE")
     hal.write_lcd(2, "ALL NOMINAL")
     hal.play_sfx(1)                       # SFX-ACK at completion
-    return "ok: daily check complete; all 10 steps nominal"
 
 
 def _exec_query_resource(hal, args: dict) -> str:
@@ -139,6 +130,7 @@ DAILY_SYSTEMS_CHECK = Tool(
         "SFX-COMMS once, then SFX-TICK ten times at 1 s intervals "
         "while lighting LEDs 11-20 sequentially and writing STEP n/10 "
         "to LCD line 2, then SFX-ACK with CHECK COMPLETE on the LCD. "
+        "Runs in the background; the tool returns as soon as it starts. "
         "Not arm-gated."
     ),
     parameters={"type": "object", "properties": {}},
@@ -192,38 +184,17 @@ MARS_NORMAL_TOOLS: list[Tool] = [
 ]
 
 
-def _load_emitted(path: Optional[Path] = None) -> dict:
-    src = path or EMITTED_YAML
-    if not src.exists():
-        raise FileNotFoundError(
-            f"emitted scenario YAML not found at {src}.\n"
-            "Run: python overlay/tools/emit_scenarios.py mars_control_normal"
-        )
-    with src.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    if not isinstance(data, dict):
-        raise ValueError(f"{src}: emitted YAML is not a mapping")
-    return data
-
-
 def build_scenario(emitted_path: Optional[Path] = None) -> Scenario:
     """Construct the Mars Control Normal ``Scenario`` from the emitted YAML."""
-    data = _load_emitted(emitted_path)
-    labels = data.get("switch_labels") or []
-    if len(labels) != 10:
-        raise ValueError("emitted scenario has fewer than 10 switch_labels")
-
-    return Scenario(
-        name=data.get("title", "Mars Control Center — Normal Operations"),
-        voice=data.get("voice", "lessac"),
-        persona_prompt=data.get("persona_prompt", ""),
-        tools=list(GENERIC_TOOLS) + MARS_NORMAL_TOOLS,
-        switch_labels=[str(s) for s in labels],
-        sfx_role_names=list(data.get("sfx_role_names") or [
-            "ack", "deny", "caution", "alarm", "arm",
-            "disarm", "comms", "click", "tick", "status",
-        ]),
+    return build_from_emitted(
+        "mars_control_normal",
+        tools=MARS_NORMAL_TOOLS,
+        default_title="Mars Control Center — Normal Operations",
+        default_voice="lessac",
+        emitted_path=emitted_path,
     )
 
 
+# Module-level singleton for the common case (importers who don't care
+# about reloading the YAML on each construction).
 MARS_CONTROL_NORMAL: Scenario = build_scenario()
