@@ -70,7 +70,10 @@ CAMERA_INDEX = 0
 # Env knobs:
 #   MINI_AI_OVERLAY=true|false      enable the overlay path (default false)
 #   MINI_AI_OVERLAY_SCENARIO=<id>   scenario id; default space_command_launch
-#   MINI_AI_OVERLAY_HAL=<url>       HAL endpoint; default ws://127.0.0.1:8765/hal
+#   MINI_AI_OVERLAY_HAL=<spec>      HAL endpoint; default ws://127.0.0.1:8765/hal (the
+#                                   simulator). serial:auto = the real RP2040 panel over
+#                                   USB, found by vendor id; serial:/dev/ttyACM0 = a
+#                                   specific port
 #   MINI_AI_OVERLAY_MODEL=<name>    Ollama model; default qwen2.5:14b
 OVERLAY_ENABLED = os.environ.get("MINI_AI_OVERLAY", "").lower() in ("1", "true", "yes")
 OVERLAY_SCENARIO_ID = os.environ.get("MINI_AI_OVERLAY_SCENARIO", "space_command_launch")
@@ -788,7 +791,7 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
     # overlay package — if overlay/ is missing or its deps aren't installed,
     # the non-overlay path still works.
     from overlay.pi5_hal.client import HalClient
-    from overlay.pi5_hal.transport import WebsocketTransport
+    from overlay.pi5_hal.transport import open_transport
     from overlay.scenario.runtime import ScenarioRuntime
     from overlay.scenario.demo import SCENARIOS
 
@@ -799,7 +802,12 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
         return
 
     scenario = SCENARIOS[OVERLAY_SCENARIO_ID]
-    hal = HalClient(WebsocketTransport(OVERLAY_HAL_URL))
+    try:
+        transport = open_transport(OVERLAY_HAL_URL)
+    except ValueError as e:
+        _emit(status_q, "error", str(e))
+        return
+    hal = HalClient(transport)
     runtime = ScenarioRuntime(hal, scenario)
 
     history: list = []

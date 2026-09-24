@@ -7,6 +7,10 @@ All transports expose:
     close()                  — shut down
     connected                — False once the link has dropped (or before connect)
 
+``open_transport(spec)`` builds one from a HAL endpoint string
+(``ws://…`` for the simulator, ``serial:auto`` / ``serial:<device>`` for the
+RP2040).
+
 Receivers are responsible for splitting on \\n. The client layer above
 parses JSON.
 """
@@ -109,19 +113,47 @@ class WebsocketTransport:
                 pass
 
 
+# USB vendor ids of boards that run the overlay firmware: Adafruit (Metro
+# RP2040 with CircuitPython) and Raspberry Pi (bare RP2040 / Pico).
+RP2040_USB_VIDS = (0x239A, 0x2E8A)
+
+
+def find_rp2040_port() -> str:
+    """Return the serial device of the connected RP2040 panel controller.
+
+    Picks the first USB CDC port whose vendor id is in RP2040_USB_VIDS. If the
+    firmware enables CircuitPython's second (data) CDC channel, that one is
+    preferred over the REPL console. Raises RuntimeError listing what was seen.
+    """
+    try:
+        from serial.tools import list_ports  # type: ignore
+    except ImportError as e:
+        raise RuntimeError("pyserial required: pip install pyserial") from e
+    ports = sorted(list_ports.comports(), key=lambda p: p.device)
+    boards = [p for p in ports if p.vid in RP2040_USB_VIDS]
+    if not boards:
+        seen = ", ".join(f"{p.device} ({p.description})" for p in ports) or "none"
+        raise RuntimeError(f"no RP2040 panel controller found on USB (serial ports: {seen})")
+    data = [p for p in boards if "data" in (p.interface or "").lower()
+            or "cdc2" in (p.interface or "").lower()]
+    return (data or boards)[0].device
+
+
 class SerialTransport:
     """USB CDC serial transport for the RP2040 firmware.
 
     Requires `pyserial`: pip install pyserial.
 
-    Note: untested against real hardware until Drop 5+. The interface
-    is functional but only wired up so the demo and CLI work uniformly.
+    ``port`` is a device (``/dev/ttyACM0``, ``COM5``), ``"auto"`` to find the
+    RP2040 by USB vendor id at every connect (the device name can change when
+    the board re-enumerates), or any pyserial URL (``loop://`` for tests).
     """
 
-    def __init__(self, port: str, baud: int = 115200, recv_timeout: float = 1.0):
+    def __init__(self, port: str = "auto", baud: int = 115200, recv_timeout: float = 0.5):
         self.port = port
         self.baud = baud
         self.recv_timeout = recv_timeout
+        self.device: Optional[str] = None   # the resolved device after connect()
         self.ser = None
         self._failed = False
 
@@ -130,7 +162,9 @@ class SerialTransport:
             import serial  # type: ignore
         except ImportError as e:
             raise RuntimeError("pyserial required: pip install pyserial") from e
-        self.ser = serial.Serial(self.port, self.baud, timeout=self.recv_timeout)
+        self.device = find_rp2040_port() if self.port == "auto" else self.port
+        self.ser = serial.serial_for_url(self.device, baudrate=self.baud,
+                                         timeout=self.recv_timeout)
         self._failed = False
 
     @property
@@ -141,8 +175,12 @@ class SerialTransport:
         if self.ser is None:
             raise RuntimeError("not connected")
         data = line if line.endswith("\n") else line + "\n"
-        self.ser.write(data.encode("utf-8"))
-        self.ser.flush()
+        try:
+            self.ser.write(data.encode("utf-8"))
+            self.ser.flush()
+        except Exception:
+            self._failed = True
+            raise
 
     def recv_line(self, timeout: Optional[float] = None) -> Optional[str]:
         if self.ser is None:
@@ -165,6 +203,34 @@ class SerialTransport:
                 self.ser.close()
             except Exception:
                 pass
+
+
+def open_transport(spec: str):
+    """Build a transport from a HAL endpoint spec.
+
+    - ``ws://host:port/hal`` (or ``wss://``) — the browser simulator
+    - ``serial:auto`` — the RP2040 panel, found by USB vendor id
+    - ``serial:/dev/ttyACM0``, ``serial:COM5`` — a specific serial device;
+      append ``?baud=N`` to change the 115200 default
+    - a bare ``/dev/...`` or ``COMn`` path is treated as ``serial:<path>``
+    """
+    spec = spec.strip()
+    if spec.startswith(("ws://", "wss://")):
+        return WebsocketTransport(spec)
+    if spec.startswith("serial:"):
+        port = spec[len("serial:"):]
+    elif spec.startswith("/dev/") or spec.upper().startswith("COM"):
+        port = spec
+    else:
+        raise ValueError(
+            f"unrecognised HAL endpoint {spec!r}: use ws://host:port/hal, "
+            "serial:auto or serial:/dev/ttyACM0"
+        )
+    baud = 115200
+    if "?baud=" in port:
+        port, baud_s = port.split("?baud=", 1)
+        baud = int(baud_s)
+    return SerialTransport(port or "auto", baud)
 
 
 class MockTransport:

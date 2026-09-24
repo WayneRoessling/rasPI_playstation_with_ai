@@ -472,6 +472,10 @@ def phase8(c):
         'dest="$HOME/Desktop/$(basename "$f")"; sed "s|@HOME@|$HOME|g" "$f" > "$dest" && chmod +x "$dest"; done',
         label="install desktop launchers")
 
+    # The RP2040 panel is a USB serial device (/dev/ttyACM*), which needs dialout.
+    run(c, 'id -nG | grep -qw dialout || sudo usermod -aG dialout "$USER"',
+        label="serial port access (dialout)")
+
     ensure_wlan0_default(c)
     reqs = " ".join(f"-r ~/mini-ai/{r}" for r in DEPLOY_REQUIREMENTS)
     run(c, f"~/mini-ai/.venv/bin/pip install --no-cache-dir {reqs} 2>&1 | tail -5",
