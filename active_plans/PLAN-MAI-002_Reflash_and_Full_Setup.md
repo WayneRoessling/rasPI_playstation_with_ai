@@ -73,7 +73,7 @@ Before reflashing, verify nothing needs to be saved from the Pi:
    - Storage: 1TB microSD
 4. Edit Settings:
    - Hostname: `mini-ai-01`
-   - Username: `miniai_admin`
+   - Username: `<your-username>`
    - Password: *(Pi admin password from your password manager; setup scripts read it from `.env` via `MINI_AI_PASS`)*
    - Wi-Fi: configured (SSID + password + country US)
    - SSH: enabled with password auth
@@ -90,7 +90,7 @@ Before reflashing, verify nothing needs to be saved from the Pi:
 ### Step 3 — Push SSH Key
 
 ```bash
-cd 77_projects/customer/projects/Mini-AI
+cd rasPI_playstation_with_ai   # your clone of this repo
 python push_key.py
 ```
 
@@ -116,7 +116,7 @@ This runs Phases 2-7 automatically:
 | 6 | Pipeline | 15-30 min | Build whisper.cpp, install Piper TTS, round-trip test |
 | 7 | VSCode | 1 min | Workspace settings, requirements.txt |
 
-**Network note:** The Ethernet gateway (192.168.99.1) blocks ollama.com and github.com. The setup script automatically swaps the default route to Wi-Fi (10.1.10.1) for those downloads, then restores Ethernet afterward.
+**Network note:** The Ethernet gateway (<gateway>) blocks ollama.com and github.com. The setup script automatically swaps the default route to Wi-Fi (10.1.10.1) for those downloads, then restores Ethernet afterward.
 
 ### Step 5 — Verify
 
@@ -129,14 +129,14 @@ Expected: 13/13 checks pass.
 ### Step 6 — Deploy Pipeline
 
 ```bash
-scp -i ~/.ssh/id_ed25519_mini_ai voice_pipeline.py miniai_admin@192.168.99.103:~/mini-ai/
-scp -i ~/.ssh/id_ed25519_mini_ai test_e2e_pipeline.py miniai_admin@192.168.99.103:/tmp/
+scp -i ~/.ssh/id_ed25519_mini_ai voice_pipeline.py <user>@<pi-ip>:~/mini-ai/
+scp -i ~/.ssh/id_ed25519_mini_ai test_e2e_pipeline.py <user>@<pi-ip>:/tmp/
 ```
 
 ### Step 7 — E2E Test
 
 ```bash
-ssh -i ~/.ssh/id_ed25519_mini_ai miniai_admin@192.168.99.103 \
+ssh -i ~/.ssh/id_ed25519_mini_ai <user>@<pi-ip> \
   '~/mini-ai/.venv/bin/python /tmp/test_e2e_pipeline.py'
 ```
 

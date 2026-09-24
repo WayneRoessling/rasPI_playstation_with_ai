@@ -5,7 +5,7 @@ import time
 import subprocess
 import os
 
-sys.path.insert(0, "/home/miniai_admin/mini-ai")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from voice_pipeline import transcribe, ask_llm, capture_image
 from mini_ai_config import load_preset
 

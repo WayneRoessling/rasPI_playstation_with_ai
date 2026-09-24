@@ -105,7 +105,7 @@ Stand up a Raspberry Pi 5 (16GB) as a fully offline, on-device edge AI platform 
    | Tab | Setting | Value |
    |-----|---------|-------|
    | General | Hostname | `mini-ai-01` |
-   | General | Username | `miniai_admin` |
+   | General | Username | `<your-username>` |
    | General | Password | *(the Pi admin password — store in your password manager; the setup scripts read it from `.env` via `MINI_AI_PASS` when needed)* |
    | General | Wi-Fi SSID | *(your network — fill in even if using Ethernet)* |
    | General | Wi-Fi Country | `US` |
@@ -131,7 +131,7 @@ On your Windows PC, run the automated connection script — tell me when the Pi 
 
 ```powershell
 # Test passwordless SSH (key was pre-configured in earlier session)
-ssh -o StrictHostKeyChecking=no -i "$env:USERPROFILE\.ssh\id_ed25519_mini_ai" miniai_admin@192.168.99.103 "echo OK && hostname && uname -r && uptime"
+ssh -o StrictHostKeyChecking=no -i "$env:USERPROFILE\.ssh\id_ed25519_mini_ai" <user>@<pi-ip> "echo OK && hostname && uname -r && uptime"
 ```
 
 Expected output:
@@ -300,7 +300,7 @@ sudo reboot
 Wait 90 seconds, then reconnect:
 ```powershell
 # Windows
-ssh miniai_admin@192.168.99.103
+ssh <user>@<pi-ip>
 ```
 
 ### 2.10 — Gate Test (Post Reboot)
@@ -387,7 +387,7 @@ ret, frame = cap.read()
 cap.release()
 
 if ret:
-    cv2.imwrite("/home/miniai_admin/tests/camera/py_test.jpg", frame)
+    cv2.imwrite("/home/<user>/tests/camera/py_test.jpg", frame)
     print(f"SUCCESS: Image captured ({frame.shape[1]}x{frame.shape[0]})")
 else:
     print("FAIL: Could not read frame")
@@ -486,7 +486,7 @@ print("Text test:", response['message']['content'])
 
 # Test vision (using the still image captured in Phase 3)
 import base64
-with open("/home/miniai_admin/tests/camera/test_still.jpg", "rb") as f:
+with open("/home/<user>/tests/camera/test_still.jpg", "rb") as f:
     img_b64 = base64.b64encode(f.read()).decode()
 
 response = ollama.chat(

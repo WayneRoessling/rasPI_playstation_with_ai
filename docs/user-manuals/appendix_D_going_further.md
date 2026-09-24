@@ -93,4 +93,4 @@ This is a real future drop, not yet built. The "Drops 5–9" territory mentioned
 
 You built a thing. You wired tiny components onto a breadboard, watched a transistor switch a sound, typed text onto a screen with two wires and one chip, and turned a key and heard the panel arm. You earned each of those moments by following along and not giving up when something didn't work on the first try.
 
-The full source of this project lives at `github.com/RoesslingDigital/mini-ai-pi5`. New drops land there as the build grows, and if you find a bug or want to share a scenario, that's where to send it. The panel on your desk is now a tool you can lean on. Have fun with it.
+The full source of this project lives at [github.com/WayneRoessling/rasPI_playstation_with_ai](https://github.com/WayneRoessling/rasPI_playstation_with_ai). New drops land there as the build grows, and if you find a bug or want to share a scenario, that's where to send it. The panel on your desk is now a tool you can lean on. Have fun with it.
