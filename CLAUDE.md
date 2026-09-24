@@ -44,7 +44,7 @@ Phases:
 - B: Image 2TB NVMe with Raspberry Pi Imager (preconfigure SSH key, hostname, Wi-Fi)
 - C: Boot Pi from USB-NVMe
 - D: First-boot verification (dmesg, dpkg, throttled)
-- E: `python setup_all.py` (Phases 2-7, ~30-60 min)
+- E: `python setup_all.py` (Phases 2-8, ~45-90 min; phase 8 deploys the app code)
 
 ---
 
@@ -89,7 +89,7 @@ Env vars `MINI_AI_TEXT_MODEL` / `MINI_AI_VISION_MODEL` / `MINI_AI_VOICE` / `MINI
 
 | Script | Purpose |
 |--------|---------|
-| `setup_all.py` | Full setup Phases 2-7 (`--from N` / `--only N` to resume) |
+| `setup_all.py` | Full setup Phases 2-8 (`--from N` / `--only N` to resume; `--only 8` redeploys app code) |
 | `test_pi_state.py` | 13-point health check (all phases) |
 | `test_e2e_pipeline.py` | E2E pipeline: TTS→STT→LLM→Vision→TTS |
 | `voice_pipeline.py` | The live voice assistant |
@@ -108,7 +108,7 @@ Env vars `MINI_AI_TEXT_MODEL` / `MINI_AI_VISION_MODEL` / `MINI_AI_VOICE` / `MINI
 - [ ] `dmesg` zero filesystem errors
 - [ ] `vcgencmd get_throttled` → `0x0`
 - [ ] `file /var/lib/dpkg/status` → `ASCII text`
-- [ ] `setup_all.py` completes Phases 2-7
+- [ ] `setup_all.py` completes Phases 2-8
 - [ ] `test_pi_state.py` → 13/13
 - [ ] `test_e2e_pipeline.py` → all 5 stages pass
 - [ ] Live voice test: speak → hear response
