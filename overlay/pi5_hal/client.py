@@ -77,6 +77,10 @@ class HalClient:
         finally:
             with self._lock:
                 self._state["connected"] = False
+            # Join so a later connect() never has two rx threads racing on
+            # the transport's queue. recv_line() polls every 0.5s.
+            if self._rx_thread is not None and self._rx_thread is not threading.current_thread():
+                self._rx_thread.join(timeout=2.0)
 
     def __enter__(self):
         self.connect()
@@ -241,6 +245,12 @@ class HalClient:
         while not self._stop.is_set():
             line = self.transport.recv_line(timeout=0.5)
             if not line:
+                # Transports without a `connected` attribute are assumed up.
+                if not getattr(self.transport, "connected", True):
+                    log.warning("HAL transport disconnected")
+                    with self._lock:
+                        self._state["connected"] = False
+                    return
                 continue
             try:
                 msg = json.loads(line)

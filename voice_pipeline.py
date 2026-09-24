@@ -102,6 +102,23 @@ def _get_audio_card() -> str:
         _audio_card = _find_usb_audio_card()
     return _audio_card
 
+
+def _forget_audio_card() -> None:
+    """Drop the cached card so the next turn re-detects it (the card name/number
+    can change if the USB audio device drops out and re-enumerates)."""
+    global _audio_card
+    _audio_card = None
+
+
+def _unlink_quiet(*paths: str | None) -> None:
+    """Remove temp files, ignoring ones that are already gone."""
+    for path in paths:
+        if path:
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
+
 VISION_TRIGGERS = [
     "what do you see", "look at", "describe what", "show me", "camera",
     "what is this", "take a picture", "take a photo",
@@ -176,16 +193,22 @@ def _emit(queue: Queue | None, kind: str, text: str) -> None:
 def record_utterance(duration_secs: int = 5) -> str:
     """Record from microphone to a temp WAV file (16kHz mono PCM, ready for Whisper)."""
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-    subprocess.run([
-        "arecord", "-D", _get_audio_card(),
-        "-f", "cd", "-t", "wav", "-d", str(duration_secs), tmp.name
-    ], check=True, capture_output=True)
+    tmp.close()
     tmp16 = tmp.name.replace(".wav", "_16k.wav")
-    subprocess.run([
-        "ffmpeg", "-y", "-i", tmp.name,
-        "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", tmp16
-    ], check=True, capture_output=True)
-    os.unlink(tmp.name)
+    try:
+        subprocess.run([
+            "arecord", "-D", _get_audio_card(),
+            "-f", "cd", "-t", "wav", "-d", str(duration_secs), tmp.name
+        ], check=True, capture_output=True)
+        subprocess.run([
+            "ffmpeg", "-y", "-i", tmp.name,
+            "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", tmp16
+        ], check=True, capture_output=True)
+    except BaseException:
+        _unlink_quiet(tmp16)
+        raise
+    finally:
+        _unlink_quiet(tmp.name)
     return tmp16
 
 
@@ -247,37 +270,33 @@ def speak(text: str, voice: Voice, volume_gain: float) -> None:
     raw = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     raw_path = raw.name
     raw.close()
+    amplified_path = None
 
-    # 1) Piper synthesizes raw WAV using the supplied voice
-    subprocess.run(
-        [PIPER_BIN, "--model", voice_model_path(voice), "--output_file", raw_path],
-        input=text, text=True, check=True, capture_output=True,
-    )
-
-    # 2) ffmpeg applies software volume gain (1.0 = unity, 2.0 = +6dB).
-    #    Skip the re-encode if gain is ~1.0 to avoid latency on the no-op case.
-    if abs(volume_gain - 1.0) < 0.01:
-        play_path = raw_path
-        amplified_path = None
-    else:
-        amplified_path = raw_path.replace(".wav", "_amp.wav")
+    try:
+        # 1) Piper synthesizes raw WAV using the supplied voice
         subprocess.run(
-            ["ffmpeg", "-y", "-i", raw_path,
-             "-filter:a", f"volume={volume_gain}",
-             "-c:a", "pcm_s16le", amplified_path],
-            check=True, capture_output=True,
+            [PIPER_BIN, "--model", voice_model_path(voice), "--output_file", raw_path],
+            input=text, text=True, check=True, capture_output=True,
         )
-        play_path = amplified_path
 
-    # 3) Play through the Yahboom USB speaker (same card as mic)
-    subprocess.run(["aplay", "-D", _get_audio_card(), play_path], check=True, capture_output=True)
+        # 2) ffmpeg applies software volume gain (1.0 = unity, 2.0 = +6dB).
+        #    Skip the re-encode if gain is ~1.0 to avoid latency on the no-op case.
+        if abs(volume_gain - 1.0) < 0.01:
+            play_path = raw_path
+        else:
+            amplified_path = raw_path.replace(".wav", "_amp.wav")
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", raw_path,
+                 "-filter:a", f"volume={volume_gain}",
+                 "-c:a", "pcm_s16le", amplified_path],
+                check=True, capture_output=True,
+            )
+            play_path = amplified_path
 
-    os.unlink(raw_path)
-    if amplified_path and amplified_path != raw_path:
-        try:
-            os.unlink(amplified_path)
-        except FileNotFoundError:
-            pass
+        # 3) Play through the Yahboom USB speaker (same card as mic)
+        subprocess.run(["aplay", "-D", _get_audio_card(), play_path], check=True, capture_output=True)
+    finally:
+        _unlink_quiet(raw_path, amplified_path)
 
 
 # ── One conversation turn ─────────────────────────────────────────────────────
@@ -288,8 +307,10 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     wav = record_utterance(10)
 
     _emit(status_q, "status", "Transcribing")
-    user_text = transcribe(wav)
-    os.unlink(wav)
+    try:
+        user_text = transcribe(wav)
+    finally:
+        _unlink_quiet(wav)
 
     text_model, vision_model, voice, gain, personality = state.snapshot()
 
@@ -328,7 +349,8 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
 
 # ── Overlay turn (PTT-gated, scenario-driven, tool-use LLM) ───────────────────
 
-def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
+def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int,
+                      stop: threading.Event | None = None) -> str | None:
     """Block until PTT press, then record while held; return wav path or None.
 
     True start-on-press / stop-on-release: starts ``arecord`` with no
@@ -338,13 +360,19 @@ def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
     than dictating recording length.
 
     Uses the HAL state mirror's PTT field plus the event queue for edges.
-    Returns the path to a 16 kHz mono WAV ready for Whisper.
+    Returns the path to a 16 kHz mono WAV ready for Whisper, or None if
+    ``stop`` is set while waiting. Raises ConnectionError if the HAL link
+    drops while waiting, so the caller can reconnect.
     """
     import time as _time
 
     # Drain any stale ptt event so we react only to a fresh press
     _emit(status_q, "status", "Waiting for PTT")
     while True:
+        if stop is not None and stop.is_set():
+            return None
+        if not hal.state().get("connected", True):
+            raise ConnectionError("overlay HAL disconnected")
         msg = hal.wait_for_event("ptt", timeout=0.5)
         if msg is None:
             continue
@@ -390,11 +418,11 @@ def _record_ptt_gated(hal, status_q: Queue | None, max_secs: int) -> str | None:
              "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", tmp16],
             check=True, capture_output=True,
         )
+    except BaseException:
+        _unlink_quiet(tmp16)
+        raise
     finally:
-        try:
-            os.unlink(tmp.name)
-        except FileNotFoundError:
-            pass
+        _unlink_quiet(tmp.name)
     return tmp16
 
 
@@ -437,16 +465,15 @@ def run_overlay_turn(state: RuntimeState, runtime, history: list,
     from overlay.scenario.llm import run_turn   # local import: keep top-level light
 
     hal = runtime.hal
-    wav = _record_ptt_gated(hal, status_q, OVERLAY_PTT_MAX_SECS)
+    wav = _record_ptt_gated(hal, status_q, OVERLAY_PTT_MAX_SECS, stop=state.stop)
     if wav is None:
         return history
 
     _emit(status_q, "status", "Transcribing")
-    user_text = transcribe(wav)
     try:
-        os.unlink(wav)
-    except FileNotFoundError:
-        pass
+        user_text = transcribe(wav)
+    finally:
+        _unlink_quiet(wav)
 
     _, _, voice, gain, _ = state.snapshot()
     _emit(status_q, "user", user_text)
@@ -493,22 +520,42 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
         return
 
     scenario = SCENARIOS[OVERLAY_SCENARIO_ID]
-    _emit(status_q, "status", f"Connecting overlay HAL @ {OVERLAY_HAL_URL}")
     hal = HalClient(WebsocketTransport(OVERLAY_HAL_URL))
-    hal.connect()
     runtime = ScenarioRuntime(hal, scenario)
-    _emit(status_q, "status", f"Overlay: {scenario.name}")
 
     history: list = []
+    backoff = 2.0
     try:
         while not state.stop.is_set():
+            # (Re)connect whenever the link is down — at startup, or after the
+            # simulator / RP2040 drops. The panel may simply not be up yet.
+            if not hal.state()["connected"]:
+                _emit(status_q, "status", f"Connecting overlay HAL @ {OVERLAY_HAL_URL}")
+                try:
+                    hal.disconnect()   # reap the previous rx thread / socket
+                    hal.connect()
+                except Exception as e:
+                    _emit(status_q, "error",
+                          f"Overlay HAL unreachable at {OVERLAY_HAL_URL} ({e}); "
+                          f"retrying in {backoff:.0f}s")
+                    if state.stop.wait(backoff):
+                        break
+                    backoff = min(backoff * 2, 30.0)
+                    continue
+                backoff = 2.0
+                _emit(status_q, "status", f"Overlay: {scenario.name}")
             try:
                 history = run_overlay_turn(state, runtime, history, status_q)
             except KeyboardInterrupt:
                 _emit(status_q, "status", "Stopped")
                 break
+            except ConnectionError as e:
+                _emit(status_q, "error", f"{e} — reconnecting")
+                if state.stop.wait(1.0):
+                    break
             except Exception as e:
                 _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
+                _forget_audio_card()
                 if state.stop.wait(2.0):
                     break
     finally:
@@ -535,6 +582,7 @@ def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
             break
         except Exception as e:
             _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
+            _forget_audio_card()   # re-detect in case the USB audio device re-enumerated
             # Brief pause to avoid a tight failure loop
             if state.stop.wait(2.0):
                 break

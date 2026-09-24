@@ -1,10 +1,11 @@
 """Transport implementations for the HAL client.
 
-All transports expose three methods:
+All transports expose:
     connect()                — open the link, start any receive thread
     send(line: str)          — send one JSON-lines frame (no trailing \\n required)
     recv_line(timeout=None)  — return one received line or None on timeout
     close()                  — shut down
+    connected                — False once the link has dropped (or before connect)
 
 Receivers are responsible for splitting on \\n. The client layer above
 parses JSON.
@@ -65,8 +66,13 @@ class WebsocketTransport:
         # subsequent recv() calls — turn it off so idle periods don't
         # tear down the rx thread.
         self.ws.settimeout(None)
+        self._stop.clear()   # allow reconnect after close()
         self._thread = threading.Thread(target=self._rx_loop, daemon=True)
         self._thread.start()
+
+    @property
+    def connected(self) -> bool:
+        return self.ws is not None and self._thread is not None and self._thread.is_alive()
 
     def _rx_loop(self) -> None:
         from websocket import WebSocketException  # type: ignore
@@ -74,7 +80,7 @@ class WebsocketTransport:
             try:
                 raw = self.ws.recv()
             except (WebSocketException, ConnectionError, OSError):
-                break
+                break   # link dropped — `connected` now reports False
             if raw is None:
                 continue
             for line in (raw if isinstance(raw, str) else raw.decode("utf-8", "replace")).split("\n"):
@@ -117,6 +123,7 @@ class SerialTransport:
         self.baud = baud
         self.recv_timeout = recv_timeout
         self.ser = None
+        self._failed = False
 
     def connect(self) -> None:
         try:
@@ -124,6 +131,11 @@ class SerialTransport:
         except ImportError as e:
             raise RuntimeError("pyserial required: pip install pyserial") from e
         self.ser = serial.Serial(self.port, self.baud, timeout=self.recv_timeout)
+        self._failed = False
+
+    @property
+    def connected(self) -> bool:
+        return self.ser is not None and not self._failed
 
     def send(self, line: str) -> None:
         if self.ser is None:
@@ -140,6 +152,8 @@ class SerialTransport:
         try:
             raw = self.ser.readline()
         except Exception:
+            # pyserial raises on unplug (SerialException / OSError)
+            self._failed = True
             return None
         if not raw:
             return None
@@ -167,6 +181,10 @@ class MockTransport:
 
     def connect(self) -> None:
         self._connected = True
+
+    @property
+    def connected(self) -> bool:
+        return self._connected
 
     def send(self, line: str) -> None:
         if not self._connected:
