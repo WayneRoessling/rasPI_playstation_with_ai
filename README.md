@@ -125,11 +125,10 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 ├── test_e2e_pipeline.py     end-to-end pipeline test (runs on the Pi)
 ├── tests/                   offline tests (run in CI, no hardware needed)
 ├── repair_pi_rootfs.sh      WSL2 rootfs repair (SD-card era)
-├── active_plans/            PLAN-MAI-001..003 (003 is current)
-├── designs/                 original system architecture
+├── active_plans/            PLAN-MAI-003 (current setup plan)
+├── archive/                 superseded plans, early design draft, SD-card boot refs
 └── docs/
-    ├── user-manuals/        hardware build manual (chapters, appendices, diagrams)
-    └── reference/           kernel cmdline references
+    └── user-manuals/        hardware build manual (chapters, appendices, diagrams)
 ```
 
 ## Configuration

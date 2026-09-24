@@ -1,3 +1,8 @@
+> **ARCHIVED.** Early draft from the voice-assistant-only phase (Bookworm Lite,
+> LLaVA/Llama 3B, a planned `mini_ai_app.py` that was never built). For the
+> current architecture see the [README](../../README.md) and
+> [`overlay/README.md`](../../overlay/README.md).
+
 # DESIGN-MAI-001 — Mini-AI System Architecture
 
 **Document:** DESIGN-MAI-001  

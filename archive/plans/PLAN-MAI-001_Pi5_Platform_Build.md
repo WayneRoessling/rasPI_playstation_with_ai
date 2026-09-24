@@ -1,3 +1,8 @@
+> **ARCHIVED.** Original SD-card platform build plan, superseded by
+> [PLAN-MAI-003](../../active_plans/PLAN-MAI-003_NVMe_Migration_and_Full_Setup.md)
+> and automated by `setup_all.py`. Kept for history; paths, hardware and model
+> choices here are out of date.
+
 # PLAN-MAI-001 — Raspberry Pi 5 Mini-AI Platform Build
 
 **Plan:** PLAN-MAI-001  
