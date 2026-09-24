@@ -1,6 +1,7 @@
 """Offline tests for voice_pipeline's latency paths (no audio hardware, no Ollama).
 
-Covers end-of-speech detection on synthetic PCM, sentence regrouping of
+Covers end-of-speech detection on synthetic PCM (auto and manual
+sensitivity, saved panel settings), sentence regrouping of
 streamed LLM text, parsing Ollama's streaming response, the streaming
 request payload, and the speak-while-generating worker.
 
@@ -90,6 +91,45 @@ def test_vad_talk_during_calibration():
     pcm = vp._vad_segment(iter(_frames(1.5, 5000) + _frames(2.0, 50)))
     assert pcm is not None, "speech during calibration was missed"
     print("  vad_calibration: OK")
+
+
+def test_vad_manual_threshold_and_levels():
+    """A manual threshold replaces calibration; on_level sees every frame."""
+    loud = _frames(0.3, 50) + _frames(1.0, 5000) + _frames(1.5, 50)   # tone RMS ~3500
+    assert vp._vad_segment(iter(loud), fixed_threshold=3900) is None, "too-high threshold still triggered"
+    levels: list[tuple[float, float]] = []
+    pcm = vp._vad_segment(iter(loud), fixed_threshold=1000, on_level=lambda r, t: levels.append((r, t)))
+    assert pcm is not None
+    assert levels and all(t == 1000 for _, t in levels), "threshold not reported"
+    assert max(r for r, _ in levels) > 3000 and min(r for r, _ in levels) < 100
+    print("  vad_manual:      OK")
+
+
+def test_vad_settings_persist():
+    """Panel settings round-trip through the config file and clamp to range."""
+    import os
+    import tempfile
+    import mini_ai_config as cfg
+
+    with tempfile.TemporaryDirectory() as d, \
+         mock.patch.object(cfg, "CONFIG_DIR", d), \
+         mock.patch.object(cfg, "CONFIG_PATH", str(Path(d) / "config.json")), \
+         mock.patch.dict(os.environ):   # restored on exit
+        os.environ.pop("MINI_AI_VAD_THRESHOLD", None)
+        os.environ.pop("MINI_AI_VAD_SILENCE_MS", None)
+        assert (cfg.load_vad_threshold(), cfg.load_vad_silence_ms()) == (0.0, 800)   # defaults: auto
+        cfg.save_vad_threshold(1234)
+        cfg.save_vad_silence_ms(99999)
+        assert (cfg.load_vad_threshold(), cfg.load_vad_silence_ms()) == (1234.0, cfg.MAX_VAD_SILENCE_MS)
+        cfg.save_vad_threshold(0)
+        assert cfg.load_vad_threshold() == 0.0
+        os.environ["MINI_AI_VAD_SILENCE_MS"] = "500"
+        assert cfg.load_vad_silence_ms() == 500, "env override ignored"
+    state = vp.RuntimeState("t", "v", voice=object(), volume_gain=1.0, personality=object())
+    state.set_vad_threshold(900)
+    state.set_vad_silence_ms(1200)
+    assert state.vad_settings() == (900, 1200)
+    print("  vad_settings:    OK")
 
 
 class FakeArecord:
@@ -223,6 +263,8 @@ def main() -> int:
         test_vad_no_speech()
         test_vad_max_length()
         test_vad_talk_during_calibration()
+        test_vad_manual_threshold_and_levels()
+        test_vad_settings_persist()
         test_record_until_silence()
         test_sentences()
         test_chat_stream_parsing()

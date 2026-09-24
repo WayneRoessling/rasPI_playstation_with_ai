@@ -32,7 +32,7 @@ import traceback
 import urllib.request
 import wave
 from collections import deque
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from queue import Queue
 
@@ -47,6 +47,8 @@ from mini_ai_config import (
     load_voice,
     load_volume_gain,
     load_personality,
+    load_vad_silence_ms,
+    load_vad_threshold,
     voice_model_path,
 )
 
@@ -81,14 +83,13 @@ OVERLAY_PTT_MAX_SECS = int(os.environ.get("MINI_AI_OVERLAY_PTT_MAX", "30"))
 #                                   request (Ollama's own default is 5m)
 #   MINI_AI_VAD=0                   disable end-of-speech detection and record a
 #                                   fixed 10s window instead
-#   MINI_AI_VAD_SILENCE_MS=<ms>     trailing silence that ends an utterance
-#   MINI_AI_VAD_THRESHOLD=<rms>     fixed speech threshold (int16 RMS); default
-#                                   is calibrated from the room noise each turn
 #   MINI_AI_MAX_UTTERANCE=<secs>    hard cap on one utterance
+# Mic sensitivity (speech threshold, 0 = auto) and the pause that ends an
+# utterance are live settings in RuntimeState — adjustable in the control
+# panel and saved via mini_ai_config (env MINI_AI_VAD_THRESHOLD /
+# MINI_AI_VAD_SILENCE_MS override the saved values).
 KEEP_ALIVE = os.environ.get("MINI_AI_KEEP_ALIVE", "30m")
 VAD_ENABLED = os.environ.get("MINI_AI_VAD", "1").lower() not in ("0", "false", "no")
-VAD_SILENCE_MS = int(os.environ.get("MINI_AI_VAD_SILENCE_MS", "800"))
-VAD_FIXED_THRESHOLD = float(os.environ.get("MINI_AI_VAD_THRESHOLD", "0"))
 MAX_UTTERANCE_SECS = int(os.environ.get("MINI_AI_MAX_UTTERANCE", "15"))
 LISTEN_WINDOW_SECS = 10       # wait this long for speech to start, then listen again
 
@@ -164,6 +165,8 @@ class RuntimeState:
     voice: Voice
     volume_gain: float
     personality: Personality
+    vad_threshold: float = 0.0          # speech threshold (int16 RMS); 0 = auto
+    vad_silence_ms: int = 800           # pause that ends an utterance
     lock: threading.Lock = field(default_factory=threading.Lock)
     stop: threading.Event = field(default_factory=threading.Event)
 
@@ -184,6 +187,19 @@ class RuntimeState:
         with self.lock:
             self.personality = personality
 
+    def vad_settings(self) -> tuple[float, int]:
+        """(speech threshold, 0 = auto; end-of-utterance pause in ms)."""
+        with self.lock:
+            return self.vad_threshold, self.vad_silence_ms
+
+    def set_vad_threshold(self, threshold: float) -> None:
+        with self.lock:
+            self.vad_threshold = threshold
+
+    def set_vad_silence_ms(self, silence_ms: int) -> None:
+        with self.lock:
+            self.vad_silence_ms = silence_ms
+
 
 def make_default_state() -> RuntimeState:
     """Build a RuntimeState seeded from the on-disk config."""
@@ -194,6 +210,8 @@ def make_default_state() -> RuntimeState:
         voice=load_voice(),
         volume_gain=load_volume_gain(),
         personality=load_personality(),
+        vad_threshold=load_vad_threshold(),
+        vad_silence_ms=load_vad_silence_ms(),
     )
 
 
@@ -204,6 +222,7 @@ def make_default_state() -> RuntimeState:
 #   kind == "user"   — what the user said
 #   kind == "asst"   — what the assistant replied
 #   kind == "error"  — error message
+#   kind == "level"  — "<mic rms> <speech threshold>" while listening (GUI only)
 StatusEvent = tuple[str, str]
 
 
@@ -249,8 +268,9 @@ def _frame_rms(frame: bytes) -> float:
 
 def _vad_segment(frames: Iterable[bytes], *, listen_secs: float = LISTEN_WINDOW_SECS,
                  max_secs: float = MAX_UTTERANCE_SECS,
-                 silence_ms: int = VAD_SILENCE_MS,
-                 fixed_threshold: float = VAD_FIXED_THRESHOLD) -> bytes | None:
+                 silence_ms: int = 800,
+                 fixed_threshold: float = 0.0,
+                 on_level: Callable[[float, float], None] | None = None) -> bytes | None:
     """Energy-based end-of-speech detection over 16-bit mono PCM frames.
 
     Calibrates a speech threshold from the first VAD_CALIBRATE_MS of room
@@ -258,6 +278,9 @@ def _vad_segment(frames: Iterable[bytes], *, listen_secs: float = LISTEN_WINDOW_
     (plus a short pre-roll so the first syllable isn't clipped) once
     ``silence_ms`` of quiet follows it, or ``max_secs`` elapse. Returns None
     if nobody spoke. Pure function of the frames so it can be tested offline.
+
+    ``fixed_threshold`` > 0 skips calibration. ``on_level(rms, threshold)``
+    is called for every frame (drives the control panel's mic meter).
     """
     calib_frames = VAD_CALIBRATE_MS // VAD_FRAME_MS
     preroll: deque[bytes] = deque(maxlen=VAD_PREROLL_MS // VAD_FRAME_MS)
@@ -270,6 +293,8 @@ def _vad_segment(frames: Iterable[bytes], *, listen_secs: float = LISTEN_WINDOW_
 
     for n, frame in enumerate(frames, start=1):
         rms = _frame_rms(frame)
+        if on_level is not None:
+            on_level(rms, threshold)
         if speech is None:
             preroll.append(frame)
             if not fixed_threshold and n <= calib_frames:
@@ -293,11 +318,14 @@ def _vad_segment(frames: Iterable[bytes], *, listen_secs: float = LISTEN_WINDOW_
     return b"".join(speech) if speech else None
 
 
-def record_until_silence(stop: threading.Event | None = None) -> str | None:
+def record_until_silence(stop: threading.Event | None = None, *,
+                         threshold: float = 0.0, silence_ms: int = 800,
+                         on_level: Callable[[float, float], None] | None = None) -> str | None:
     """Record until the speaker stops talking; return a 16 kHz mono WAV path.
 
     Returns None if nobody started speaking within LISTEN_WINDOW_SECS (or
-    ``stop`` was set), so the caller can simply listen again.
+    ``stop`` was set), so the caller can simply listen again. ``threshold``
+    0 means calibrate to the room; see _vad_segment for ``on_level``.
     """
     proc = subprocess.Popen(
         ["arecord", "-D", _get_audio_card(), "-q",
@@ -314,7 +342,8 @@ def record_until_silence(stop: threading.Event | None = None) -> str | None:
             yield chunk
 
     try:
-        pcm = _vad_segment(_frames())
+        pcm = _vad_segment(_frames(), fixed_threshold=threshold,
+                           silence_ms=silence_ms, on_level=on_level)
     finally:
         _stop_arecord(proc)
         proc.stdout.close()
@@ -535,7 +564,9 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     """One conversation turn — reads live state for every step."""
     if VAD_ENABLED:
         _emit(status_q, "status", "Listening")
-        wav = record_until_silence(state.stop)
+        threshold, silence_ms = state.vad_settings()
+        wav = record_until_silence(state.stop, threshold=threshold, silence_ms=silence_ms,
+                                   on_level=_level_reporter(status_q))
         if wav is None:
             return          # nobody spoke — the loop just listens again
     else:
@@ -578,6 +609,21 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     _emit(status_q, "status", "Pausing")
     state.stop.wait(3.0)   # 3s grace period before listening again
     _emit(status_q, "status", "Idle")
+
+
+def _level_reporter(status_q: Queue | None) -> Callable[[float, float], None] | None:
+    """Feed the GUI's mic meter ~10x/s. Headless mode gets nothing (it would
+    print a line per frame)."""
+    if status_q is None:
+        return None
+    frames = 0
+
+    def report(rms: float, threshold: float) -> None:
+        nonlocal frames
+        frames += 1
+        if frames % 3 == 0:     # 30 ms frames -> every ~90 ms
+            status_q.put(("level", f"{rms:.0f} {threshold:.0f}"))
+    return report
 
 
 # ── Overlay turn (PTT-gated, scenario-driven, tool-use LLM) ───────────────────
