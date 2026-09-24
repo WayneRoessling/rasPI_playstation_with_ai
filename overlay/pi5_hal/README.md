@@ -68,14 +68,42 @@ if msg and msg["state"] == 1:
 
 Default transport is `ws://127.0.0.1:8765/hal`. Pass `--serial COM5`
 (Windows) or `--serial /dev/ttyACM0` (Linux) to use a real RP2040 over
-USB CDC instead.
+USB CDC instead, or `--serial auto` to find it by USB vendor id
+(Adafruit `0x239A` / Raspberry Pi `0x2E8A`).
+
+## Using the real panel from the voice assistant
+
+`voice_pipeline.py` picks its link from `MINI_AI_OVERLAY_HAL`:
+
+| Value | Link |
+|---|---|
+| `ws://127.0.0.1:8765/hal` (default) | Browser simulator |
+| `serial:auto` | RP2040 panel over USB, found by vendor id on every (re)connect |
+| `serial:/dev/ttyACM0` (`?baud=N` optional) | A specific serial device |
+
+```bash
+MINI_AI_OVERLAY=true MINI_AI_OVERLAY_HAL=serial:auto ~/mini-ai/.venv/bin/python ~/mini-ai/mini_ai_panel.py
+```
+
+The Pi user needs the `dialout` group to open `/dev/ttyACM*`; setup phase 8
+adds it (log out and back in once afterwards). Unplugging the board is
+handled like a simulator restart: the loop reports it and reconnects when the
+board is back, re-detecting its port.
+
+`open_transport(spec)` builds the matching transport from any of these
+strings; `find_rp2040_port()` does the auto-detection.
 
 ## Transports
 
 | Class                | Use                                |
 |----------------------|------------------------------------|
 | `WebsocketTransport` | Browser simulator (default)        |
-| `SerialTransport`    | Real RP2040 firmware (USB CDC)     |
+| `SerialTransport`    | Real RP2040 firmware (USB CDC); `port="auto"` detects it |
 | `MockTransport`      | In-process testing — inject lines, capture sends |
 
-Adding a transport: implement `connect / send(line) / recv_line(timeout) / close`.
+Adding a transport: implement `connect / send(line) / recv_line(timeout) / close`
+and a `connected` property (False once the link drops).
+
+Tests: `python -m overlay.pi5_hal.test_serial_transport` runs the real
+`SerialTransport` against pyserial's `loop://` device (events, commands,
+unplug + reconnect) and auto-detection against faked USB listings.

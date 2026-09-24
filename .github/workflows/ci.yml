@@ -65,6 +65,9 @@ jobs:
       - name: PTT / HAL reconnect smoke test
         run: python -m overlay.scenario.test_ptt_smoke
 
+      - name: Serial link to the RP2040 (pyserial loop://, faked USB listing)
+        run: python -m overlay.pi5_hal.test_serial_transport
+
       - name: Start the panel simulator
         working-directory: overlay/sim
         run: |

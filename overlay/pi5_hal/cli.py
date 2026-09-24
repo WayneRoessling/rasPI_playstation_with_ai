@@ -13,7 +13,8 @@ Examples:
     python -m pi5_hal state
 
 The default transport is the simulator at ws://127.0.0.1:8765/hal.
-Pass --serial PORT to talk to a real RP2040 over USB CDC.
+Pass --serial PORT to talk to a real RP2040 over USB CDC, or --serial auto
+to find it by USB vendor id.
 """
 from __future__ import annotations
 
@@ -114,7 +115,7 @@ def build_parser():
     p.add_argument("--sim", default="ws://127.0.0.1:8765/hal",
                    help="WebSocket URL of the simulator (default: %(default)s)")
     p.add_argument("--serial", metavar="PORT",
-                   help="Serial port of the RP2040 (overrides --sim)")
+                   help="Serial port of the RP2040, or \"auto\" to find it by USB id (overrides --sim)")
     p.add_argument("--baud", type=int, default=115200)
     p.add_argument("-v", "--verbose", action="store_true")
     sub = p.add_subparsers(dest="cmd", required=True)
