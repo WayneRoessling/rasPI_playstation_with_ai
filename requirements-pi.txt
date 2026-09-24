@@ -1,0 +1,14 @@
+# Python packages for the Pi's venv (~/mini-ai/.venv), installed by setup_all.py
+# (phase 3: OpenCV + numpy, phase 6: Piper). Overlay deps come from
+# overlay/*/requirements.txt in phase 8.
+#
+# Exact pins, each checked on PyPI for a Python 3.11 / aarch64 / glibc<=2.36
+# wheel (Raspberry Pi OS Bookworm). Bump deliberately:
+#   - numpy >= 2.5 needs Python 3.12 — Bookworm ships 3.11.
+#   - opencv-python-headless 5.x is a new major version; stay on 4.x until tested.
+#   - piper-tts: voice_pipeline.speak() uses `piper --model M --output_file F`
+#     with text on stdin; still supported in 1.8.0.
+opencv-python-headless==4.14.0.94
+numpy==2.4.6
+piper-tts==1.8.0
+onnxruntime==1.30.0

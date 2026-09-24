@@ -28,6 +28,17 @@ REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 OVERLAY_MODEL = os.environ.get("MINI_AI_OVERLAY_MODEL", "qwen2.5:14b")
 
 
+def pi_pins(*names):
+    """`name==version` specs for the Pi venv, from requirements-pi.txt."""
+    pins = {}
+    with open(os.path.join(REPO_DIR, "requirements-pi.txt"), encoding="utf-8") as f:
+        for line in f:
+            line = line.split("#", 1)[0].strip()
+            if line:
+                pins[line.split("==")[0].lower()] = line
+    return " ".join(pins[n.lower()] for n in names)
+
+
 def run(c, cmd, **kwargs):
     """pi_ssh.run with pipefail on, so a failing `cmd | tail -N` aborts the phase."""
     return _run(c, cmd, pipefail=True, **kwargs)
@@ -165,7 +176,7 @@ def phase3(c):
     _, cv2 = run(c, '~/mini-ai/.venv/bin/python -c "import cv2; print(cv2.__version__)" 2>&1',
                  label="check opencv", abort_on_fail=False)
     if "Error" in cv2 or cv2.strip() == "":
-        run(c, "~/mini-ai/.venv/bin/pip install --no-cache-dir opencv-python-headless 2>&1 | tail -5",
+        run(c, f"~/mini-ai/.venv/bin/pip install --no-cache-dir {pi_pins('opencv-python-headless', 'numpy')} 2>&1 | tail -5",
             timeout=300, label="install opencv")
 
     # Test capture
@@ -322,7 +333,7 @@ def phase6(c):
                    label="check piper", abort_on_fail=False)
     if "usage" not in piper.lower():
         ensure_wlan0_default(c)
-        run(c, "~/mini-ai/.venv/bin/pip install --no-cache-dir piper-tts 2>&1 | tail -5",
+        run(c, f"~/mini-ai/.venv/bin/pip install --no-cache-dir {pi_pins('piper-tts', 'onnxruntime')} 2>&1 | tail -5",
             timeout=300, label="install piper")
         restore_eth0_default(c)
 
@@ -342,16 +353,7 @@ def phase6(c):
                 timeout=timeout, label=f"download {v.file}{ext}")
         restore_eth0_default(c)
 
-    # 6.3 Install ollama python package
-    _, ollama_py = run(c, '~/mini-ai/.venv/bin/python -c "import ollama; print(ollama.__version__)" 2>&1',
-                       label="check ollama pkg", abort_on_fail=False)
-    if "Error" in ollama_py:
-        ensure_wlan0_default(c)
-        run(c, "~/mini-ai/.venv/bin/pip install --no-cache-dir ollama 2>&1 | tail -5",
-            timeout=120, label="install ollama pkg")
-        restore_eth0_default(c)
-
-    # 6.4 Round-trip test: TTS -> STT
+    # 6.3 Round-trip test: TTS -> STT
     run(c, 'echo "Hello this is a test" | ~/mini-ai/.venv/bin/piper '
         '--model ~/piper-voices/en_US-lessac-medium.onnx '
         '--output_file /tmp/setup_tts_test.wav 2>&1',
@@ -399,11 +401,11 @@ def phase7(c):
 }
 EOF""", label="write vscode settings")
 
-    # Create requirements.txt on Pi
-    run(c, """cat > ~/mini-ai/requirements.txt << 'EOF'
-opencv-python-headless
-piper-tts
-ollama
+    # Record the venv's pinned packages on the Pi (same file phase 3/6 install from)
+    with open(os.path.join(REPO_DIR, "requirements-pi.txt"), encoding="utf-8") as f:
+        pins = f.read().strip()
+    run(c, f"""cat > ~/mini-ai/requirements.txt << 'EOF'
+{pins}
 EOF""", label="write requirements.txt")
 
     _, out = run(c, "cat ~/mini-ai/.vscode/settings.json", label="verify settings")

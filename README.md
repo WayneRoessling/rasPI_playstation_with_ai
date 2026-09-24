@@ -118,15 +118,15 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 │                            firmware, scenarios, canonical catalog, scene tests
 ├── setup_all.py             workstation → Pi setup, phases 2-8
 ├── pi_ssh.py                shared SSH helpers (reads .env)
+├── requirements*.txt        pinned deps: workstation (requirements.txt) / Pi venv (-pi)
 ├── push_key.py              one-time password-based SSH key push (fallback)
 ├── find_and_push_key.py     find the Pi on the LAN + push key
 ├── check_state.py           quick Pi diagnostics
 ├── test_pi_state.py         13-point health check
 ├── test_e2e_pipeline.py     end-to-end pipeline test (runs on the Pi)
 ├── tests/                   offline tests (run in CI, no hardware needed)
-├── repair_pi_rootfs.sh      WSL2 rootfs repair (SD-card era)
 ├── active_plans/            PLAN-MAI-003 (current setup plan)
-├── archive/                 superseded plans, early design draft, SD-card boot refs
+├── archive/                 superseded plans, early design draft, SD-card-era tools
 └── docs/
     └── user-manuals/        hardware build manual (chapters, appendices, diagrams)
 ```
