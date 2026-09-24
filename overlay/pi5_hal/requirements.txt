@@ -1,3 +1,4 @@
-websocket-client>=1.6
+# Exact pins (tested together); bump deliberately.
+websocket-client==1.9.0
 # Optional — required only for SerialTransport (real RP2040 over USB CDC)
-pyserial>=3.5
+pyserial==3.5

@@ -24,6 +24,18 @@ jobs:
       - name: VAD, streaming LLM + TTS tests (no audio hardware / Ollama)
         run: python tests/test_voice_pipeline.py
 
+  setup-scripts:
+    name: workstation setup scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Pinned deps install and the setup scripts import
+        run: python -c "import pi_ssh, setup_all; print(len(setup_all.PHASES), 'phases')"
+
   overlay:
     name: overlay checks + scene tests
     runs-on: ubuntu-latest

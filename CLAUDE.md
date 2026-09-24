@@ -61,11 +61,12 @@ Phases:
 
 | File | Fix |
 |------|-----|
-| `test_pi_state.py` | OpenCV check uses `~/mini-ai/.venv/bin/python` |
-| `setup_all.py` | Removed `voice_pipeline.py` gate from phase 6 (SCP'd after setup) |
+| `test_pi_state.py`, `check_state.py` | OpenCV check uses `~/mini-ai/.venv/bin/python` |
+| `setup_all.py` | Removed `voice_pipeline.py` gate from phase 6 (app is deployed by phase 8) |
 | `setup_all.py` | Added `_repush_key()` after phase 2 reboot |
-| `phase2_os_setup.py` | Removed `python3-opencv` apt package |
-| `phase2_os_setup.py` | Removed OpenCV gate test |
+| `setup_all.py` phase 2 | No `python3-opencv` apt package and no OpenCV gate (OpenCV is pip-installed in phase 3) |
+
+The old standalone `phase2_os_setup.py` was removed; phase 2 lives only in `setup_all.py`.
 
 ---
 

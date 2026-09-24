@@ -1,1 +1,3 @@
-paramiko>=3.0
+# Workstation-side dependencies (setup_all.py, pi_ssh.py, push_key.py, ...).
+# Exact pins so every setup run uses the same tested versions; bump deliberately.
+paramiko==4.0.0
