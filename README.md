@@ -124,7 +124,6 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 ├── test_pi_state.py         13-point health check
 ├── test_e2e_pipeline.py     end-to-end pipeline test (runs on the Pi)
 ├── tests/                   offline tests (run in CI, no hardware needed)
-├── phase2_os_setup.py       standalone phase 2 (superseded by setup_all.py)
 ├── repair_pi_rootfs.sh      WSL2 rootfs repair (SD-card era)
 ├── active_plans/            PLAN-MAI-001..003 (003 is current)
 ├── designs/                 original system architecture

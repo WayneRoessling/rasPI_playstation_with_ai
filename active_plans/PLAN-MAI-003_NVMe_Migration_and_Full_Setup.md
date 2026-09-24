@@ -197,8 +197,7 @@ These were made during the PLAN-MAI-002 attempt and remain valid:
 | `test_pi_state.py` | OpenCV check uses `~/mini-ai/.venv/bin/python` | OpenCV is pip-installed in venv, not system |
 | `setup_all.py` | Removed `voice_pipeline.py` gate from phase 6 | File is SCP'd AFTER setup_all.py, not before |
 | `setup_all.py` | Added `_repush_key()` after phase 2 reboot | Cloud-init / first-boot can wipe `~/.ssh` |
-| `phase2_os_setup.py` | Removed `python3-opencv` apt package | Causes segfaults; pip opencv-python-headless used instead |
-| `phase2_os_setup.py` | Removed OpenCV gate test | Same reason — opencv installed in phase 3, not 2 |
+| `setup_all.py` phase 2 | No `python3-opencv` apt package, no OpenCV gate | Causes segfaults; pip opencv-python-headless is installed in phase 3 (the standalone `phase2_os_setup.py` has since been removed) |
 
 ---
 
