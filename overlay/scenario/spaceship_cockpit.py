@@ -19,30 +19,15 @@ Three scenario-specific tools on top of the generic set:
 from __future__ import annotations
 
 import random
-import sys
-import time
 from pathlib import Path
 from typing import Optional
 
-try:
-    import yaml
-except ImportError:
-    sys.stderr.write("pyyaml required: pip install pyyaml\n")
-    raise
-
 from .runtime import Scenario
-from .tools import GENERIC_TOOLS, Tool
+from . import sequences
+from .loader import build_from_emitted
+from .tools import Tool
 
 
-OVERLAY_ROOT = Path(__file__).resolve().parent.parent
-EMITTED_YAML = (
-    OVERLAY_ROOT
-    / "narratives"
-    / "scenarios"
-    / "spaceship_cockpit"
-    / "_emitted"
-    / "scenario.yaml"
-)
 
 
 # Required switches for `engage_warp_drive` — S6 Warp Coil and S7 Impulse.
@@ -92,17 +77,23 @@ def _exec_engage_warp_drive(hal, args: dict) -> str:
     hal.write_lcd(1, "ENGAGING WARP")
     hal.write_lcd(2, "WARP 0.0")
 
-    # 5-second ramp: light LEDs 11..15 step by step, tick once per step,
-    # update LCD line 2 with the current warp factor.
+    # The 5 s ramp runs in the background so the conversation continues.
+    sequences.start(hal, "warp ramp", _run_warp_ramp)
+    return "ok: warp drive spooling up; warp 5 lock in 5 seconds"
+
+
+def _run_warp_ramp(hal, cancelled) -> None:
+    # Light LEDs 11..15 step by step, tick once per step, update LCD
+    # line 2 with the current warp factor.
     for step in range(1, 6):
         hal.set_led(10 + step, on=True)
         hal.write_lcd(2, f"WARP {step}.0")
         hal.play_sfx(9)                   # SFX-TICK
-        time.sleep(1.0)
+        if cancelled.wait(1.0):
+            return
 
     hal.write_lcd(1, "WARP ACTIVE")
     hal.play_sfx(10)                      # SFX-STATUS at lock
-    return "ok: warp engaged at factor 5"
 
 
 def _exec_scan_sector(hal, args: dict) -> str:
@@ -139,7 +130,8 @@ ENGAGE_WARP_DRIVE = Tool(
         "are on; refuses with the missing list otherwise. Plays "
         "SFX-COMMS, then a 5-step warp ramp (LEDs 11-15 + SFX-TICK + "
         "LCD WARP n.n), then SFX-STATUS at lock with LCD = WARP "
-        "ACTIVE. Arm-gated."
+        "ACTIVE. The ramp runs in the background; the tool returns as "
+        "soon as it starts. Arm-gated."
     ),
     parameters={"type": "object", "properties": {}},
     execute=_exec_engage_warp_drive,
@@ -178,38 +170,17 @@ SPACESHIP_COCKPIT_TOOLS: list[Tool] = [
 ]
 
 
-def _load_emitted(path: Optional[Path] = None) -> dict:
-    src = path or EMITTED_YAML
-    if not src.exists():
-        raise FileNotFoundError(
-            f"emitted scenario YAML not found at {src}.\n"
-            "Run: python overlay/tools/emit_scenarios.py spaceship_cockpit"
-        )
-    with src.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    if not isinstance(data, dict):
-        raise ValueError(f"{src}: emitted YAML is not a mapping")
-    return data
-
-
 def build_scenario(emitted_path: Optional[Path] = None) -> Scenario:
     """Construct the Spaceship Cockpit ``Scenario`` from the emitted YAML."""
-    data = _load_emitted(emitted_path)
-    labels = data.get("switch_labels") or []
-    if len(labels) != 10:
-        raise ValueError("emitted scenario has fewer than 10 switch_labels")
-
-    return Scenario(
-        name=data.get("title", "Spaceship Cockpit"),
-        voice=data.get("voice", "amy"),
-        persona_prompt=data.get("persona_prompt", ""),
-        tools=list(GENERIC_TOOLS) + SPACESHIP_COCKPIT_TOOLS,
-        switch_labels=[str(s) for s in labels],
-        sfx_role_names=list(data.get("sfx_role_names") or [
-            "ack", "deny", "caution", "alarm", "arm",
-            "disarm", "comms", "click", "tick", "status",
-        ]),
+    return build_from_emitted(
+        "spaceship_cockpit",
+        tools=SPACESHIP_COCKPIT_TOOLS,
+        default_title="Spaceship Cockpit",
+        default_voice="amy",
+        emitted_path=emitted_path,
     )
 
 
+# Module-level singleton for the common case (importers who don't care
+# about reloading the YAML on each construction).
 SPACESHIP_COCKPIT: Scenario = build_scenario()

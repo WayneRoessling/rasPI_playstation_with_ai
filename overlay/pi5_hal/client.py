@@ -182,15 +182,18 @@ class HalClient:
             return n
 
     def send_raw(self, cmd: dict) -> int:
-        if "id" not in cmd:
-            cmd["id"] = self._next()
+        # `led` uses `id` for the LED number, so its tracking id (the value
+        # echoed back as ack.of) travels as `id_msg` — HAL_PROTOCOL.md §5.1.
+        key = "id_msg" if cmd.get("t") == "led" else "id"
+        if key not in cmd:
+            cmd[key] = self._next()
         # Tap the recorder before the transport write so a transient
         # transport error still leaves a complete audit trail.
         with self._lock:
             if self._record is not None:
                 self._record.append(dict(cmd))
         self.transport.send(json.dumps(cmd))
-        return cmd["id"]
+        return cmd[key]
 
     def set_led(self, led_id: int, on: bool = True, brightness: Optional[int] = None) -> int:
         v = brightness if brightness is not None else (255 if on else 0)

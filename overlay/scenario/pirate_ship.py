@@ -13,30 +13,15 @@ Three scenario-specific tools, none arm-gated (pirates are reckless):
 from __future__ import annotations
 
 import itertools
-import sys
 import time
 from pathlib import Path
 from typing import Optional
 
-try:
-    import yaml
-except ImportError:
-    sys.stderr.write("pyyaml required: pip install pyyaml\n")
-    raise
-
 from .runtime import Scenario
-from .tools import GENERIC_TOOLS, Tool
+from .loader import build_from_emitted
+from .tools import Tool
 
 
-OVERLAY_ROOT = Path(__file__).resolve().parent.parent
-EMITTED_YAML = (
-    OVERLAY_ROOT
-    / "narratives"
-    / "scenarios"
-    / "pirate_ship"
-    / "_emitted"
-    / "scenario.yaml"
-)
 
 
 SWITCH_LABELS: dict[int, str] = {
@@ -143,38 +128,17 @@ PIRATE_SHIP_TOOLS: list[Tool] = [
 ]
 
 
-def _load_emitted(path: Optional[Path] = None) -> dict:
-    src = path or EMITTED_YAML
-    if not src.exists():
-        raise FileNotFoundError(
-            f"emitted scenario YAML not found at {src}.\n"
-            "Run: python overlay/tools/emit_scenarios.py pirate_ship"
-        )
-    with src.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    if not isinstance(data, dict):
-        raise ValueError(f"{src}: emitted YAML is not a mapping")
-    return data
-
-
 def build_scenario(emitted_path: Optional[Path] = None) -> Scenario:
     """Construct the Pirate Ship ``Scenario`` from the emitted YAML."""
-    data = _load_emitted(emitted_path)
-    labels = data.get("switch_labels") or []
-    if len(labels) != 10:
-        raise ValueError("emitted scenario has fewer than 10 switch_labels")
-
-    return Scenario(
-        name=data.get("title", "Pirate Space Ship"),
-        voice=data.get("voice", "alan"),
-        persona_prompt=data.get("persona_prompt", ""),
-        tools=list(GENERIC_TOOLS) + PIRATE_SHIP_TOOLS,
-        switch_labels=[str(s) for s in labels],
-        sfx_role_names=list(data.get("sfx_role_names") or [
-            "ack", "deny", "caution", "alarm", "arm",
-            "disarm", "comms", "click", "tick", "status",
-        ]),
+    return build_from_emitted(
+        "pirate_ship",
+        tools=PIRATE_SHIP_TOOLS,
+        default_title="Pirate Space Ship",
+        default_voice="alan",
+        emitted_path=emitted_path,
     )
 
 
+# Module-level singleton for the common case (importers who don't care
+# about reloading the YAML on each construction).
 PIRATE_SHIP: Scenario = build_scenario()
