@@ -32,7 +32,8 @@ browser-based panel simulator. The physical panel build is in progress (see the
   answer → speak. Recording stops when you stop talking, and the answer is spoken
   sentence by sentence while the model is still generating it. Say "what do you
   see" to send a webcam frame to a vision model.
-- **Scenario console** (`MINI_AI_OVERLAY=true`): push-to-talk from the panel, and
+- **Scenario console** (pick a scenario in the control panel's **Mode** menu, or
+  `MINI_AI_OVERLAY=true`): push-to-talk from the panel, and
   the LLM drives the panel through scenario-specific tools. Dangerous actions are
   arm-gated behind the physical key switch. See [`overlay/README.md`](overlay/README.md).
 
@@ -138,7 +139,8 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 | Pi host, user, SSH key (workstation) | `.env` (`MINI_AI_HOST`, `MINI_AI_USER`, `MINI_AI_SSH_KEY`) |
 | Saved preset / voice / personality / volume (Pi) | `~/.config/mini-ai/config.json`, set via the desktop pickers |
 | One-off overrides (Pi) | `MINI_AI_PRESET`, `MINI_AI_TEXT_MODEL`, `MINI_AI_VISION_MODEL`, `MINI_AI_VOICE`, `MINI_AI_VOLUME`, `MINI_AI_PERSONALITY` |
-| Scenario console (Pi) | `MINI_AI_OVERLAY=true`, `MINI_AI_OVERLAY_SCENARIO`, `MINI_AI_OVERLAY_HAL` (`ws://…` simulator — default; `serial:auto` for the real RP2040 panel), `MINI_AI_OVERLAY_MODEL` |
+| Mode (Pi) | **Control panel → Mode**: voice assistant or any scenario, switchable live and saved to `config.json`. `MINI_AI_OVERLAY=true`/`false` forces it at startup |
+| Scenario console (Pi) | `MINI_AI_OVERLAY_SCENARIO`, `MINI_AI_OVERLAY_HAL` (`ws://…` simulator — default; `serial:auto` for the real RP2040 panel), `MINI_AI_OVERLAY_MODEL` |
 | Mic sensitivity (Pi) | **Control panel → Mic sensitivity**: Auto or a manual Sensitivity, the Pause that ends an utterance, and a live mic meter. Saved to `config.json`; `MINI_AI_VAD_THRESHOLD` / `MINI_AI_VAD_SILENCE_MS` override |
 | Responsiveness (Pi) | `MINI_AI_KEEP_ALIVE` (how long models stay loaded, default `30m`), `MINI_AI_VAD=0` (fixed 10s recording instead of stop-on-silence), `MINI_AI_MAX_UTTERANCE` (default 15s) |
 

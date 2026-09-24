@@ -12,6 +12,7 @@ Layout:
   ┌─ Mini-AI Controls ─────────────────────────────┐
   │                                                 │
   │  ●  Listening (5s)                              │
+  │  Mode:    [Pirate Space Ship                ▼]   │
   │                                                 │
   │  You said:                                      │
   │  ┌────────────────────────────────────────────┐ │
@@ -58,7 +59,7 @@ from mini_ai_config import (
     MIN_VAD_THRESHOLD, MAX_VAD_THRESHOLD, VAD_THRESHOLD_AUTO,
     MIN_VAD_SILENCE_MS, MAX_VAD_SILENCE_MS,
     save_voice, save_volume_gain, save_personality,
-    save_vad_threshold, save_vad_silence_ms,
+    save_vad_threshold, save_vad_silence_ms, save_scenario,
     voice_is_installed,
 )
 from voice_pipeline import (
@@ -67,6 +68,22 @@ from voice_pipeline import (
 
 
 SAMPLE_TEXT = "Hello, I am Mini AI. This is a test of the current voice and volume."
+
+VOICE_MODE_LABEL = "Voice assistant (no panel)"
+
+
+def load_mode_choices() -> tuple[list[tuple[str, str | None]], str | None]:
+    """[(label, scenario_id or None)] for the Mode picker, plus an error if
+    the scenarios couldn't be loaded (overlay deps missing, bad YAML...)."""
+    choices: list[tuple[str, str | None]] = [(VOICE_MODE_LABEL, None)]
+    try:
+        from overlay.scenario.demo import SCENARIOS
+    except Exception as e:   # the plain assistant must keep working without overlay/
+        return choices, f"Scenarios unavailable: {e}"
+    scenarios = [(f"Scenario: {sc.name}", sid) for sid, sc in SCENARIOS.items() if sid != "test_console"]
+    if "test_console" in SCENARIOS:
+        scenarios.append(("Diagnostics: Test Console", "test_console"))
+    return choices + scenarios, None
 
 # Manual sensitivity used when "Auto" is first switched off.
 DEFAULT_MANUAL_THRESHOLD = 800.0
@@ -99,8 +116,8 @@ class ControlPanel:
         self._test_thread: threading.Thread | None = None
 
         root.title("Mini-AI Controls")
-        root.geometry("540x640")
-        root.minsize(500, 600)
+        root.geometry("560x700")
+        root.minsize(520, 660)
 
         # Outer padding
         outer = ttk.Frame(root, padding=12)
@@ -116,6 +133,30 @@ class ControlPanel:
             font=("", 10), foreground="#1a73e8",
         )
         self.status_label.pack(side=tk.LEFT, padx=(8, 0))
+
+        # Mode picker (live): plain assistant or one of the console scenarios
+        mode_row = ttk.Frame(outer)
+        mode_row.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(mode_row, text="Mode:", width=10).pack(side=tk.LEFT)
+        self.mode_choices, mode_error = load_mode_choices()
+        labels = [label for label, _ in self.mode_choices]
+        current = state.current_scenario()
+        current_label = next((label for label, sid in self.mode_choices if sid == current), None)
+        if current_label is None:     # saved/env scenario not loadable — show it anyway
+            current_label = f"Scenario: {current}"
+            self.mode_choices.append((current_label, current))
+            labels.append(current_label)
+        self.mode_var = tk.StringVar(value=current_label)
+        mode_combo = ttk.Combobox(mode_row, textvariable=self.mode_var, values=labels,
+                                  state="readonly", width=36)
+        mode_combo.pack(side=tk.LEFT, padx=(4, 0), fill=tk.X, expand=True)
+        mode_combo.bind("<<ComboboxSelected>>", self._on_mode_change)
+        if mode_error:
+            ttk.Label(outer, text=mode_error, foreground="#b3261e", font=("", 8),
+                      wraplength=480).pack(anchor=tk.W)
+        self.mode_hint = ttk.Label(outer, foreground="#666", font=("", 8), wraplength=480)
+        self.mode_hint.pack(anchor=tk.W)
+        self._refresh_mode_hint()
 
         # User said
         ttk.Label(outer, text="You said:", font=("", 9, "bold")).pack(anchor=tk.W, pady=(4, 2))
@@ -195,6 +236,23 @@ class ControlPanel:
 
         # Start polling the status queue
         root.after(150, self._drain_status_queue)
+
+    def _refresh_mode_hint(self) -> None:
+        if self.state.current_scenario():
+            self.mode_hint.config(text="Hold the panel's push-to-talk button to speak. "
+                                       "Switch modes any time; the change applies after "
+                                       "the current turn.")
+        else:
+            self.mode_hint.config(text="Just talk — it listens and answers. "
+                                       "Pick a scenario to drive the console instead.")
+
+    def _on_mode_change(self, _event=None) -> None:
+        label = self.mode_var.get()
+        scenario_id = next((sid for lab, sid in self.mode_choices if lab == label), None)
+        self.state.set_scenario(scenario_id)
+        save_scenario(scenario_id)
+        self._refresh_mode_hint()
+        self.status_var.set("Switching mode…")
 
     def _build_mic_sensitivity(self, parent: ttk.Frame, state: RuntimeState) -> None:
         """Speech threshold + end-of-utterance pause, with a live mic meter."""

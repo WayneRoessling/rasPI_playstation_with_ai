@@ -428,6 +428,32 @@ def save_vad_silence_ms(value: int) -> None:
     _write_config({"vad_silence_ms": _clamp_vad_silence_ms(value)})
 
 
+# ── Mode: plain voice assistant, or a scenario on the console ────────────────
+#
+# None = plain voice assistant; otherwise an overlay scenario id
+# (overlay/scenario/demo.py SCENARIOS). Picked in the control panel. Env
+# override: MINI_AI_OVERLAY=true (+ MINI_AI_OVERLAY_SCENARIO, default
+# space_command_launch) forces a scenario; MINI_AI_OVERLAY=false forces the
+# plain assistant. Ids aren't validated here — voice_pipeline does that.
+
+DEFAULT_SCENARIO_ID = "space_command_launch"
+
+
+def load_scenario() -> str | None:
+    """Active scenario id, or None for the plain voice assistant."""
+    env = os.environ.get("MINI_AI_OVERLAY", "").strip().lower()
+    if env in ("1", "true", "yes"):
+        return os.environ.get("MINI_AI_OVERLAY_SCENARIO", "").strip() or DEFAULT_SCENARIO_ID
+    if env in ("0", "false", "no"):
+        return None
+    return _read_config().get("scenario") or None
+
+
+def save_scenario(scenario_id: str | None) -> None:
+    """Persist the chosen mode (None = plain voice assistant)."""
+    _write_config({"scenario": scenario_id or None})
+
+
 if __name__ == "__main__":
     # Quick CLI: print active preset, voice, personality, and volume
     p = load_preset()

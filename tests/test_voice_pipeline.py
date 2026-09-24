@@ -132,6 +132,88 @@ def test_vad_settings_persist():
     print("  vad_settings:    OK")
 
 
+def _state(**kw):
+    return vp.RuntimeState("t", "v", voice=object(), volume_gain=1.0, personality=object(), **kw)
+
+
+def test_mode_switching():
+    """run_loop runs the picked mode, switches live, idles on a dead mode, stops."""
+    state = _state()
+    calls: list[str | None] = []
+    ran = threading.Event()
+
+    def fake_voice(st, q):
+        calls.append(None)
+        ran.set()
+        st.interrupt.wait()
+
+    def fake_overlay(st, q, scenario_id):
+        calls.append(scenario_id)
+        ran.set()
+        if scenario_id == "broken":
+            return                 # gives up without an interrupt (e.g. bad HAL endpoint)
+        st.interrupt.wait()
+
+    def switch(scenario_id):
+        ran.clear()
+        state.set_scenario(scenario_id)
+        assert ran.wait(2.0), f"mode {scenario_id!r} never started"
+
+    with mock.patch.object(vp, "_run_voice_loop", fake_voice), \
+         mock.patch.object(vp, "_run_overlay_loop", fake_overlay), \
+         mock.patch.object(vp, "_warm_up_in_background", lambda *a: None):
+        loop = threading.Thread(target=vp.run_loop, args=(state, None), daemon=True)
+        loop.start()
+        assert ran.wait(2.0)
+        switch("pirate_ship")
+        switch(None)
+        switch("broken")
+        time.sleep(0.3)
+        assert calls.count("broken") == 1, f"dead mode retried in a loop: {calls}"
+        switch("mars_control_normal")
+        state.stop.set()
+        loop.join(2.0)
+    assert not loop.is_alive(), "run_loop ignored stop"
+    assert calls == [None, "pirate_ship", None, "broken", "mars_control_normal"], calls
+    print("  mode_switching:  OK")
+
+
+def test_stop_wakes_interrupt_waits():
+    state = _state()
+    state.stop.set()
+    assert state.interrupt.is_set(), "stop didn't wake interrupt waits"
+    state2 = _state(scenario_id="pirate_ship")
+    state2.set_scenario("pirate_ship")          # same mode: no restart
+    assert not state2.interrupt.is_set()
+    print("  stop_interrupt:  OK")
+
+
+def test_scenario_setting():
+    import os
+    import tempfile
+    import mini_ai_config as cfg
+
+    with tempfile.TemporaryDirectory() as d, \
+         mock.patch.object(cfg, "CONFIG_DIR", d), \
+         mock.patch.object(cfg, "CONFIG_PATH", str(Path(d) / "config.json")), \
+         mock.patch.dict(os.environ):
+        os.environ.pop("MINI_AI_OVERLAY", None)
+        os.environ.pop("MINI_AI_OVERLAY_SCENARIO", None)
+        assert cfg.load_scenario() is None                       # default: plain assistant
+        cfg.save_scenario("pirate_ship")
+        assert cfg.load_scenario() == "pirate_ship"
+        os.environ["MINI_AI_OVERLAY"] = "false"
+        assert cfg.load_scenario() is None, "MINI_AI_OVERLAY=false ignored"
+        os.environ["MINI_AI_OVERLAY"] = "true"
+        assert cfg.load_scenario() == cfg.DEFAULT_SCENARIO_ID
+        os.environ["MINI_AI_OVERLAY_SCENARIO"] = "army_battle_command"
+        assert cfg.load_scenario() == "army_battle_command"
+        del os.environ["MINI_AI_OVERLAY"]
+        cfg.save_scenario(None)
+        assert cfg.load_scenario() is None
+    print("  scenario_config: OK")
+
+
 class FakeArecord:
     """Popen stand-in whose stdout replays canned PCM, then hits EOF."""
 
@@ -265,6 +347,9 @@ def main() -> int:
         test_vad_talk_during_calibration()
         test_vad_manual_threshold_and_levels()
         test_vad_settings_persist()
+        test_mode_switching()
+        test_stop_wakes_interrupt_waits()
+        test_scenario_setting()
         test_record_until_silence()
         test_sentences()
         test_chat_stream_parsing()
