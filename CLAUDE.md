@@ -86,7 +86,9 @@ control panel. Env vars override the file: `MINI_AI_PRESET`, `MINI_AI_TEXT_MODEL
 `MINI_AI_KEEP_ALIVE`, `MINI_AI_VAD`, `MINI_AI_MAX_UTTERANCE`, and the scenario
 console's `MINI_AI_OVERLAY*` (see README → Configuration).
 
-The scenario console (`MINI_AI_OVERLAY=true`) uses `qwen2.5:14b` by default —
+The mode (plain assistant or a scenario) is picked live in the control panel's
+Mode menu and saved as `scenario` in `config.json`; `MINI_AI_OVERLAY=true|false`
+forces it at startup. The scenario console uses `qwen2.5:14b` by default —
 expect it to be slow on the Pi's CPU; measure during Phase E and consider a
 smaller tool-capable model.
 

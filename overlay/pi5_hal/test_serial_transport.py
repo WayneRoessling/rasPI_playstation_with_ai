@@ -123,7 +123,7 @@ def test_overlay_loop_waits_for_board():
     q: queue.Queue = queue.Queue()
     with mock.patch.object(vp, "OVERLAY_HAL_URL", "serial:auto"), \
          mock.patch("serial.tools.list_ports.comports", return_value=[]):
-        th = threading.Thread(target=vp._run_overlay_loop, args=(state, q), daemon=True)
+        th = threading.Thread(target=vp._run_overlay_loop, args=(state, q, "space_command_launch"), daemon=True)
         th.start()
         time.sleep(1.0)
         state.stop.set()

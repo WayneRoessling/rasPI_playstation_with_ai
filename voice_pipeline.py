@@ -47,6 +47,7 @@ from mini_ai_config import (
     load_voice,
     load_volume_gain,
     load_personality,
+    load_scenario,
     load_vad_silence_ms,
     load_vad_threshold,
     voice_model_path,
@@ -67,16 +68,16 @@ CAMERA_INDEX = 0
 # the simulator (or, later, the RP2040 firmware). Default off — the existing
 # voice loop continues to work for users without the overlay hardware/sim.
 #
-# Env knobs:
-#   MINI_AI_OVERLAY=true|false      enable the overlay path (default false)
-#   MINI_AI_OVERLAY_SCENARIO=<id>   scenario id; default space_command_launch
+# The mode (plain assistant vs. which scenario) is live state, picked in the
+# control panel and saved in config.json. Env knobs:
+#   MINI_AI_OVERLAY=true|false      force a scenario / the plain assistant at startup
+#   MINI_AI_OVERLAY_SCENARIO=<id>   scenario for MINI_AI_OVERLAY=true; default
+#                                   space_command_launch
 #   MINI_AI_OVERLAY_HAL=<spec>      HAL endpoint; default ws://127.0.0.1:8765/hal (the
 #                                   simulator). serial:auto = the real RP2040 panel over
 #                                   USB, found by vendor id; serial:/dev/ttyACM0 = a
 #                                   specific port
 #   MINI_AI_OVERLAY_MODEL=<name>    Ollama model; default qwen2.5:14b
-OVERLAY_ENABLED = os.environ.get("MINI_AI_OVERLAY", "").lower() in ("1", "true", "yes")
-OVERLAY_SCENARIO_ID = os.environ.get("MINI_AI_OVERLAY_SCENARIO", "space_command_launch")
 OVERLAY_HAL_URL = os.environ.get("MINI_AI_OVERLAY_HAL", "ws://127.0.0.1:8765/hal")
 OVERLAY_MODEL = os.environ.get("MINI_AI_OVERLAY_MODEL", "qwen2.5:14b")
 OVERLAY_PTT_MAX_SECS = int(os.environ.get("MINI_AI_OVERLAY_PTT_MAX", "30"))
@@ -160,9 +161,27 @@ VISION_TRIGGERS = [
 
 # ── Runtime state shared between the loop thread and the GUI ──────────────────
 
+class _StopEvent(threading.Event):
+    """``stop`` that also trips ``interrupt``, so every wait that watches
+    ``interrupt`` (mode switches) wakes on stop too."""
+
+    def __init__(self, interrupt: threading.Event) -> None:
+        super().__init__()
+        self._interrupt = interrupt
+
+    def set(self) -> None:
+        super().set()
+        self._interrupt.set()
+
+
 @dataclass
 class RuntimeState:
-    """Mutable runtime config. Protect mutations with self.lock."""
+    """Mutable runtime config. Protect mutations with self.lock.
+
+    ``scenario_id`` None = plain voice assistant, else the overlay scenario
+    driving the console. ``interrupt`` is set when the loop should drop what
+    it's waiting on (stop, or the mode changed); waits use it, not ``stop``.
+    """
     text_model: str
     vision_model: str
     voice: Voice
@@ -170,8 +189,13 @@ class RuntimeState:
     personality: Personality
     vad_threshold: float = 0.0          # speech threshold (int16 RMS); 0 = auto
     vad_silence_ms: int = 800           # pause that ends an utterance
+    scenario_id: str | None = None      # None = plain voice assistant
     lock: threading.Lock = field(default_factory=threading.Lock)
-    stop: threading.Event = field(default_factory=threading.Event)
+    interrupt: threading.Event = field(default_factory=threading.Event)
+    stop: threading.Event = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.stop = _StopEvent(self.interrupt)
 
     def snapshot(self) -> tuple[str, str, Voice, float, Personality]:
         """Read-consistent snapshot of the live values."""
@@ -203,6 +227,18 @@ class RuntimeState:
         with self.lock:
             self.vad_silence_ms = silence_ms
 
+    def current_scenario(self) -> str | None:
+        with self.lock:
+            return self.scenario_id
+
+    def set_scenario(self, scenario_id: str | None) -> None:
+        """Switch modes: the running loop notices via ``interrupt`` and restarts."""
+        with self.lock:
+            changed = scenario_id != self.scenario_id
+            self.scenario_id = scenario_id
+        if changed:
+            self.interrupt.set()
+
 
 def make_default_state() -> RuntimeState:
     """Build a RuntimeState seeded from the on-disk config."""
@@ -215,6 +251,7 @@ def make_default_state() -> RuntimeState:
         personality=load_personality(),
         vad_threshold=load_vad_threshold(),
         vad_silence_ms=load_vad_silence_ms(),
+        scenario_id=load_scenario(),
     )
 
 
@@ -568,7 +605,7 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     if VAD_ENABLED:
         _emit(status_q, "status", "Listening")
         threshold, silence_ms = state.vad_settings()
-        wav = record_until_silence(state.stop, threshold=threshold, silence_ms=silence_ms,
+        wav = record_until_silence(state.interrupt, threshold=threshold, silence_ms=silence_ms,
                                    on_level=_level_reporter(status_q))
         if wav is None:
             return          # nobody spoke — the loop just listens again
@@ -610,7 +647,7 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     response = _speak_streamed(_sentences(pieces), state, status_q)
     _emit(status_q, "asst", response)
     _emit(status_q, "status", "Pausing")
-    state.stop.wait(3.0)   # 3s grace period before listening again
+    state.interrupt.wait(3.0)   # 3s grace period before listening again
     _emit(status_q, "status", "Idle")
 
 
@@ -747,7 +784,7 @@ def run_overlay_turn(state: RuntimeState, runtime, history: list,
     from overlay.scenario.llm import run_turn   # local import: keep top-level light
 
     hal = runtime.hal
-    wav = _record_ptt_gated(hal, status_q, OVERLAY_PTT_MAX_SECS, stop=state.stop)
+    wav = _record_ptt_gated(hal, status_q, OVERLAY_PTT_MAX_SECS, stop=state.interrupt)
     if wav is None:
         return history
 
@@ -785,8 +822,9 @@ def run_overlay_turn(state: RuntimeState, runtime, history: list,
     return history
 
 
-def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
-    """Overlay-mode loop. Sets up the HAL + scenario, then PTT-driven turns."""
+def _run_overlay_loop(state: RuntimeState, status_q: Queue | None, scenario_id: str) -> None:
+    """Overlay-mode loop. Sets up the HAL + scenario, then PTT-driven turns
+    until ``state.interrupt`` (stop or a mode switch)."""
     # Late imports so the existing voice loop has no hard dependency on the
     # overlay package — if overlay/ is missing or its deps aren't installed,
     # the non-overlay path still works.
@@ -795,13 +833,13 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
     from overlay.scenario.runtime import ScenarioRuntime
     from overlay.scenario.demo import SCENARIOS
 
-    if OVERLAY_SCENARIO_ID not in SCENARIOS:
+    if scenario_id not in SCENARIOS:
         _emit(status_q, "error",
-              f"Unknown overlay scenario {OVERLAY_SCENARIO_ID!r}; "
+              f"Unknown overlay scenario {scenario_id!r}; "
               f"options: {sorted(SCENARIOS)}")
         return
 
-    scenario = SCENARIOS[OVERLAY_SCENARIO_ID]
+    scenario = SCENARIOS[scenario_id]
     try:
         transport = open_transport(OVERLAY_HAL_URL)
     except ValueError as e:
@@ -813,7 +851,7 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
     history: list = []
     backoff = 2.0
     try:
-        while not state.stop.is_set():
+        while not state.interrupt.is_set():
             # (Re)connect whenever the link is down — at startup, or after the
             # simulator / RP2040 drops. The panel may simply not be up yet.
             if not hal.state()["connected"]:
@@ -825,7 +863,7 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
                     _emit(status_q, "error",
                           f"Overlay HAL unreachable at {OVERLAY_HAL_URL} ({e}); "
                           f"retrying in {backoff:.0f}s")
-                    if state.stop.wait(backoff):
+                    if state.interrupt.wait(backoff):
                         break
                     backoff = min(backoff * 2, 30.0)
                     continue
@@ -835,15 +873,16 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
                 history = run_overlay_turn(state, runtime, history, status_q)
             except KeyboardInterrupt:
                 _emit(status_q, "status", "Stopped")
+                state.stop.set()
                 break
             except ConnectionError as e:
                 _emit(status_q, "error", f"{e} — reconnecting")
-                if state.stop.wait(1.0):
+                if state.interrupt.wait(1.0):
                     break
             except Exception as e:
                 _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
                 _forget_audio_card()
-                if state.stop.wait(2.0):
+                if state.interrupt.wait(2.0):
                     break
     finally:
         try:
@@ -854,28 +893,46 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
 
 # ── Loop runner (used by both CLI and the Tk panel) ───────────────────────────
 
-def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
-    """Run conversation turns until state.stop is set or KeyboardInterrupt."""
-    # Load the model while the first utterance is being recorded, so the
-    # first answer doesn't also pay the model's cold-load time.
-    _warm_up_in_background(OVERLAY_MODEL if OVERLAY_ENABLED else state.text_model, status_q)
-    if OVERLAY_ENABLED:
-        _emit(status_q, "status",
-              f"Overlay mode ({OVERLAY_SCENARIO_ID}) — set MINI_AI_OVERLAY= to disable")
-        _run_overlay_loop(state, status_q)
-        return
-    while not state.stop.is_set():
+def _run_voice_loop(state: RuntimeState, status_q: Queue | None) -> None:
+    """Plain voice-assistant turns until ``state.interrupt``."""
+    while not state.interrupt.is_set():
         try:
             run_voice_turn(state, status_q)
         except KeyboardInterrupt:
             _emit(status_q, "status", "Stopped")
+            state.stop.set()
             break
         except Exception as e:
             _emit(status_q, "error", f"{e}\n\n{traceback.format_exc()}")
             _forget_audio_card()   # re-detect in case the USB audio device re-enumerated
             # Brief pause to avoid a tight failure loop
-            if state.stop.wait(2.0):
+            if state.interrupt.wait(2.0):
                 break
+
+
+def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
+    """Run the current mode until ``state.stop``; switch when the mode changes.
+
+    The mode is ``state.scenario_id`` (None = plain voice assistant). Picking
+    another one in the control panel sets ``state.interrupt``: the running
+    mode finishes its current turn, then the new one starts.
+    """
+    while not state.stop.is_set():
+        state.interrupt.clear()
+        scenario_id = state.current_scenario()
+        # Load the mode's model while the first utterance is being recorded,
+        # so the first answer doesn't also pay the model's cold-load time.
+        _warm_up_in_background(OVERLAY_MODEL if scenario_id else state.text_model, status_q)
+        if scenario_id:
+            _emit(status_q, "status", f"Scenario mode ({scenario_id})")
+            _run_overlay_loop(state, status_q, scenario_id)
+        else:
+            _run_voice_loop(state, status_q)
+        if not state.interrupt.is_set():
+            # The mode gave up (e.g. unknown scenario, bad HAL endpoint) —
+            # wait for another pick instead of retrying in a tight loop.
+            _emit(status_q, "status", "Stopped — pick another mode")
+            state.interrupt.wait()
 
 
 # ── Headless CLI entrypoint ───────────────────────────────────────────────────
@@ -888,6 +945,7 @@ if __name__ == "__main__":
     print(f"  Vision: {state.vision_model}")
     print(f"  Voice:  {state.voice.label}")
     print(f"  Volume gain: {state.volume_gain}x")
+    print(f"  Mode:   {state.scenario_id or 'voice assistant'}")
     print("  Speak naturally. Say 'what do you see' for vision.")
     print("  Press Ctrl+C to quit.")
     print("  (For live controls, run mini_ai_panel.py instead.)")
