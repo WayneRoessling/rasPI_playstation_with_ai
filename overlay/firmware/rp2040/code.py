@@ -14,7 +14,6 @@ See overlay/docs/HAL_PROTOCOL.md for the wire format.
 """
 import time
 
-import supervisor
 
 from lib.protocol import Protocol
 from lib.peripherals import Peripherals

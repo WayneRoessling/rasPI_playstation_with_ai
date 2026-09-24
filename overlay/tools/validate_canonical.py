@@ -44,7 +44,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 try:
     import yaml
@@ -234,7 +234,7 @@ class Validator:
         for field in ("arm_sfx_slot", "disarm_sfx_slot"):
             slot = key.get(field)
             if slot is not None and slot not in SFX_SLOT_RANGE:
-                self.err(f"switches.yaml[mt301_key]", f"{field} {slot} out of range 1..10")
+                self.err("switches.yaml[mt301_key]", f"{field} {slot} out of range 1..10")
         ptt = self.switches.get("ptt") or {}
         slot = ptt.get("click_sfx_slot")
         if slot is not None and slot not in SFX_SLOT_RANGE:

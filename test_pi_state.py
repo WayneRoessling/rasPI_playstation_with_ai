@@ -107,7 +107,7 @@ print("\n" + "=" * 60)
 print(f"  {len(CHECKS)} checks run, {len(CHECKS) - len(FAILURES)} passed, {len(FAILURES)} failed")
 
 if FAILURES:
-    print(f"\n  FAILED:")
+    print("\n  FAILED:")
     for f in FAILURES:
         print(f"    - {f}")
     print("\n  (Failures in later phases are expected if that phase hasn't run yet.)")

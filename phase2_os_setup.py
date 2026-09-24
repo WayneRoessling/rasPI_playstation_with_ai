@@ -8,7 +8,6 @@ Idempotent: safe to re-run — skips steps already completed.
 """
 
 import time
-import sys
 from pi_ssh import connect, run, gate, get_config
 
 

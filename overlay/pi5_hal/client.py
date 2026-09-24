@@ -247,7 +247,8 @@ class HalClient:
             if not line:
                 # Transports without a `connected` attribute are assumed up.
                 if not getattr(self.transport, "connected", True):
-                    log.warning("HAL transport disconnected")
+                    if not self._stop.is_set():   # a deliberate disconnect() isn't news
+                        log.warning("HAL transport disconnected")
                     with self._lock:
                         self._state["connected"] = False
                     return
