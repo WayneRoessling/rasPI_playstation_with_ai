@@ -6,7 +6,9 @@ Welcome. You're about to build a voice-controlled panel — a row of switches, l
 
 This first chapter has no wiring. You'll meet the tools you'll be using, learn the four safety rules that keep you and your parts in one piece, and form one quick habit — touching something metal before you touch a chip — that protects the most fragile components in the build.
 
-![A finished mini-ai control panel with switches, LEDs, and small displays mounted on a front panel](images/D-0.2.png)
+> **PHOTO PENDING (D-0.2).** A finished mini-ai control panel with switches, LEDs, and small displays mounted on a front panel.
+
+<!-- Restore when the photo exists: ![A finished mini-ai control panel with switches, LEDs, and small displays mounted on a front panel](images/D-0.2.png) -->
 
 ## Before you start
 
@@ -25,7 +27,9 @@ What you do need:
 
 Spread the following tools on the table. You'll use them across many chapters, so a permanent home for each one saves time later.
 
-![Tool tray showing USB-C cable, USB-A cable, side cutters, wire strippers, Phillips screwdriver, jumper-wire kit, breadboard, and a phone for taking photos](images/D-0.1.png)
+> **PHOTO PENDING (D-0.1).** Tool tray showing USB-C cable, USB-A cable, side cutters, wire strippers, Phillips screwdriver, jumper-wire kit, breadboard, and a phone for taking photos.
+
+<!-- Restore when the photo exists: ![Tool tray showing USB-C cable, USB-A cable, side cutters, wire strippers, Phillips screwdriver, jumper-wire kit, breadboard, and a phone for taking photos](images/D-0.1.png) -->
 
 a. A **USB-C cable** (the small oval connector you can plug in either way up) that carries data. Some USB-C cables only carry power — those won't work for talking to the Metro RP2040. If the cable came with a phone charger, it's probably fine.
 

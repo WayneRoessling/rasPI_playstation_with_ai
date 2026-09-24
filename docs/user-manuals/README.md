@@ -60,6 +60,11 @@ GIMP for annotating in-house photographs. See
 [`plan/DIAGRAM_LIST.md`](plan/DIAGRAM_LIST.md) for the full inventory
 and production order.
 
+Photographs that haven't been taken yet appear in the chapters as a
+`> **PHOTO PENDING (D-x.y).**` callout that describes the shot, with the
+final image link kept in an HTML comment right below it — swap the two
+when the photo lands in `images/`.
+
 **Shipped so far** (hand-coded SVG → PNG via headless Chromium; sources
 in `source/`, rendered PNGs in `images/`. D-2.2 is a live screenshot of
 the simulator and so has no SVG source):
@@ -81,10 +86,10 @@ the simulator and so has no SVG source):
 | 2. Review / approval | done |
 | 3. **Chapters 0–4 + Appendices A and C (Drop 3)** | done |
 | 4. **Appendix B (Pinout Reference Card) + diagrams D-2.1 / D-3.1 / D-4.3** | done |
-| 4a. **Diagrams D-2.2 / D-4.1 / D-4.2** | **done — this PR** |
+| 4a. **Diagrams D-2.2 / D-4.1 / D-4.2** | done |
 | 5. Chapters 5–12 (per-module build at the bench) | pending — Drop 4 |
 | 6. Chapters 13–15 (assemble + run + troubleshoot) | pending — Drop 4 |
-| 7. **Appendix D (Going Further)** | **done — this PR** |
+| 7. **Appendix D (Going Further)** | done |
 | 8. Production of the remaining diagrams and photographs | pending — separate workstream |
 
 Start with [`00_welcome_and_safety.md`](00_welcome_and_safety.md).

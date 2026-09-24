@@ -6,7 +6,9 @@ Before you wire anything new, let's lay out the parts that are already in the mi
 
 This chapter is about identification, not assembly. By the end you'll be able to point at each part and say what it does in one sentence.
 
-![Annotated photo of the five existing mini-ai parts arranged on a tray: Pi 5, 27 W USB-C power supply, Yahboom mic/speaker, Logitech C920 webcam, and 2 TB SSD](images/D-1.1.png)
+> **PHOTO PENDING (D-1.1).** Annotated photo of the five existing mini-ai parts arranged on a tray: Pi 5, 27 W USB-C power supply, Yahboom mic/speaker, Logitech C920 webcam, and 2 TB SSD.
+
+<!-- Restore when the photo exists: ![Annotated photo of the five existing mini-ai parts arranged on a tray: Pi 5, 27 W USB-C power supply, Yahboom mic/speaker, Logitech C920 webcam, and 2 TB SSD](images/D-1.1.png) -->
 
 ## Before you start
 
@@ -41,7 +43,9 @@ d. The **fan**, which sits on top of a heat sink. It spins up when the Pi works 
 
 Next to the Pi, find the **USB-C power supply** (a wall plug with a USB-C cable coming out of it). This is sometimes called the **PSU** (short for **power supply unit** — the device that turns wall-outlet power into the safe low-voltage power the Pi needs).
 
-![Close-up of the official 27 W USB-C power supply, with the 27 W rating circled on the label](images/D-1.2.png)
+> **PHOTO PENDING (D-1.2).** Close-up of the official 27 W USB-C power supply, with the 27 W rating circled on the label.
+
+<!-- Restore when the photo exists: ![Close-up of the official 27 W USB-C power supply, with the 27 W rating circled on the label](images/D-1.2.png) -->
 
 Look at the label on the brick. It should say **27 W** (sometimes written **5.1 V / 5 A**). This number matters.
 

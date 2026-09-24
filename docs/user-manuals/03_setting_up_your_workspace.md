@@ -6,7 +6,9 @@ In this chapter you'll set up a clean, organized workspace that you'll use for e
 
 No electricity flows yet. But by the end of this chapter, the bench is ready for the first wire in Chapter 4.
 
-![A clean, organized workspace: breadboard centered on a cutting mat, jumper-wire kit fanned out by colour to the left, parts trays to the right, phone propped on a stand to the side](images/D-3.2.png)
+> **PHOTO PENDING (D-3.2).** A clean, organized workspace: breadboard centered on a cutting mat, jumper-wire kit fanned out by colour to the left, parts trays to the right, phone propped on a stand to the side.
+
+<!-- Restore when the photo exists: ![A clean, organized workspace: breadboard centered on a cutting mat, jumper-wire kit fanned out by colour to the left, parts trays to the right, phone propped on a stand to the side](images/D-3.2.png) -->
 
 ## Before you start
 

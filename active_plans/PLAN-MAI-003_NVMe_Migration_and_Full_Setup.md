@@ -4,7 +4,7 @@
 **Project:** Mini-AI
 **Status:** Active — Ready to execute (all hardware on hand)
 **Created:** 2026-04-07
-**Supersedes:** PLAN-MAI-002 (abandoned — counterfeit SD card)
+**Supersedes:** [PLAN-MAI-002](../archive/plans/PLAN-MAI-002_Reflash_and_Full_Setup.md) (abandoned — counterfeit SD card)
 
 ---
 

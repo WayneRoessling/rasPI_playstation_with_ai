@@ -1,3 +1,7 @@
+> **ARCHIVED.** Abandoned when the 1TB SD card proved counterfeit; superseded by
+> [PLAN-MAI-003](../../active_plans/PLAN-MAI-003_NVMe_Migration_and_Full_Setup.md).
+> Kept for the incident history.
+
 # PLAN-MAI-002 — Reflash SD Card & Full Automated Setup
 
 **Plan:** PLAN-MAI-002
