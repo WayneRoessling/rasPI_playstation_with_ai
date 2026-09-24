@@ -101,7 +101,7 @@ Do this on your **Windows workstation**, not on the Pi.
    - **Storage:** the NVMe (will appear as a USB drive)
 3. Click the gear icon for OS customisation:
    - Hostname: `mini-ai-01`
-   - Username: `miniai_admin`
+   - Username: `<your-username>`
    - Password: Pi admin password from your password manager (setup scripts read it from `.env` via `MINI_AI_PASS`)
    - Wi-Fi: configured (SSID + password + country US)
    - SSH: **enabled with public-key authentication**
@@ -124,10 +124,10 @@ Do this on your **Windows workstation**, not on the Pi.
 From your workstation:
 
 ```bash
-cd 77_projects/customer/projects/Mini-AI
+cd rasPI_playstation_with_ai   # your clone of this repo
 
 # Connect via SSH key (preconfigured in image)
-ssh -i ~/.ssh/id_ed25519_mini_ai miniai_admin@192.168.99.103
+ssh -i ~/.ssh/id_ed25519_mini_ai <user>@<pi-ip>
 
 # Verify root is on the USB device, not SD
 mount | grep " / "
@@ -162,9 +162,9 @@ df -h /
 The `setup_all.py` script and `pi_ssh.py` helpers are storage-agnostic.
 
 ```bash
-cd 77_projects/customer/projects/Mini-AI
+cd rasPI_playstation_with_ai   # your clone of this repo
 
-# .env should already point at 192.168.99.103 with SSH key path
+# .env should already point at <pi-ip> with SSH key path
 
 # Run all setup phases (2-8). Phase 8 uploads the app code
 # (voice_pipeline.py, mini_ai_config.py, mini_ai_panel.py, overlay/, desktop/,

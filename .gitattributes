@@ -1,0 +1,6 @@
+# Everything runs on the Pi (Linux): keep text files LF even in Windows
+# checkouts, otherwise shell scripts deployed from them fail on `#!/bin/bash\r`.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.wav binary

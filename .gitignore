@@ -1,13 +1,20 @@
-# Environment & secrets
+# Environment & secrets (.env.example is the committed template)
 .env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
 *.pyc
 .venv/
+venv/
 *.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
-# Debug artifacts
+# Generated audio / debug artifacts
+*.wav
 pi_state.txt
 
 # OS
@@ -18,5 +25,8 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Ralph Wiggum loop state (session-local, never commit)
+# Claude Code session-local state
+.claude/worktrees/
+.claude/settings.local.json
 .claude/ralph-loop.local.md
+CLAUDE.local.md

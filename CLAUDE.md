@@ -18,17 +18,14 @@ Project context for Claude Code sessions working in this repo.
 
 ## Pi Access
 
-| Key | Value |
-|-----|-------|
-| Hostname | `mini-ai-01` |
-| IP | `192.168.99.103` |
-| User | `miniai_admin` |
-| SSH key | `~/.ssh/id_ed25519_mini_ai` |
-| SSH alias | `ssh mini-ai` (after `.ssh/config` is set up) |
+Connection settings live in `.env` (gitignored; template in `.env.example`):
+`MINI_AI_HOST`, `MINI_AI_USER`, `MINI_AI_SSH_KEY`. Machine-specific details
+(actual IP, username, SSH alias) go in `CLAUDE.local.md`, which is also gitignored —
+this repo is public, so never commit them here.
 
 Quick connect:
 ```bash
-ssh -i ~/.ssh/id_ed25519_mini_ai miniai_admin@192.168.99.103
+ssh -i ~/.ssh/id_ed25519_mini_ai <user>@<pi-ip>   # or: ssh mini-ai (with an ~/.ssh/config alias)
 ```
 
 ---

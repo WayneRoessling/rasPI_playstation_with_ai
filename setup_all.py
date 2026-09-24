@@ -449,12 +449,26 @@ def phase8(c):
 
     sftp = c.open_sftp()
     for rel in paths:
-        sftp.put(os.path.join(REPO_DIR, rel), f"{dest}/{rel}")
+        with open(os.path.join(REPO_DIR, rel), "rb") as f:
+            data = f.read()
+        if b"\0" not in data:
+            # A Windows checkout (core.autocrlf) may be CRLF; `#!/bin/bash\r` won't run.
+            data = data.replace(b"\r\n", b"\n")
+        with sftp.open(f"{dest}/{rel}", "wb") as remote:
+            remote.write(data)
     sftp.close()
     print(f"  Uploaded {len(paths)} files to {dest}")
 
     run(c, "chmod +x ~/mini-ai/voice_pipeline.py ~/mini-ai/mini_ai_panel.py ~/mini-ai/desktop/*.py "
         "~/mini-ai/desktop/*.sh", label="mark scripts executable")
+
+    # The repo copies are user-agnostic: point shebangs at the venv and fill the
+    # @HOME@ placeholder in the desktop launchers with this Pi's home directory.
+    run(c, 'cd ~/mini-ai && sed -i "1s|^#!/usr/bin/env python3\\$|#!$HOME/mini-ai/.venv/bin/python3|" '
+        "voice_pipeline.py mini_ai_panel.py desktop/*.py", label="point shebangs at venv")
+    run(c, 'mkdir -p ~/Desktop && for f in ~/mini-ai/desktop/*.desktop; do '
+        'dest="$HOME/Desktop/$(basename "$f")"; sed "s|@HOME@|$HOME|g" "$f" > "$dest" && chmod +x "$dest"; done',
+        label="install desktop launchers")
 
     ensure_wlan0_default(c)
     reqs = " ".join(f"-r ~/mini-ai/{r}" for r in DEPLOY_REQUIREMENTS)

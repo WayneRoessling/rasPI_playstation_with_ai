@@ -1,4 +1,4 @@
-#!/home/miniai_admin/mini-ai/.venv/bin/python3
+#!/usr/bin/env python3
 """
 Mini-AI Live Control Panel
 
