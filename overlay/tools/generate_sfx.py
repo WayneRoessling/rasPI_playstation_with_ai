@@ -21,7 +21,6 @@ import math
 import sys
 import wave
 from pathlib import Path
-from typing import Callable
 
 try:
     import numpy as np

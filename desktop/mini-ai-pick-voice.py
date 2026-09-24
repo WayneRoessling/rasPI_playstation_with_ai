@@ -26,9 +26,7 @@ import tempfile
 # Make sibling modules importable
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from mini_ai_config import (
-    VOICES, VOICES_BY_KEY, DEFAULT_VOICE_KEY,
-    MIN_VOLUME_GAIN, MAX_VOLUME_GAIN, DEFAULT_VOLUME_GAIN,
-    load_voice, save_voice, load_volume_gain, save_volume_gain,
+    VOICES, VOICES_BY_KEY, MIN_VOLUME_GAIN, MAX_VOLUME_GAIN, load_voice, save_voice, load_volume_gain, save_volume_gain,
     voice_model_path, voice_is_installed,
 )
 

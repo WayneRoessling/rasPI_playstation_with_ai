@@ -31,7 +31,7 @@ import threading
 import traceback
 import urllib.request
 from dataclasses import dataclass, field
-from queue import Queue, Empty
+from queue import Queue
 
 import cv2
 

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3   # config in pyproject.toml
+
+  overlay:
+    name: overlay checks + scene tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"   # matches Raspberry Pi OS Bookworm
+          cache: pip
+          cache-dependency-path: overlay/**/requirements.txt
+
+      - name: Install overlay dependencies
+        run: |
+          pip install -r overlay/scenario/requirements.txt \
+                      -r overlay/pi5_hal/requirements.txt \
+                      -r overlay/sim/requirements.txt
+
+      - name: Canonical catalog cross-references
+        run: python overlay/tools/validate_canonical.py --strict-emitted
+
+      - name: Emitted scenario YAML is in sync with the narratives
+        run: |
+          python overlay/tools/emit_scenarios.py --all
+          git diff --exit-code -- overlay/narratives \
+            || { echo "::error::Run 'python overlay/tools/emit_scenarios.py --all' and commit the result"; exit 1; }
+
+      - name: PTT / HAL reconnect smoke test
+        run: python -m overlay.scenario.test_ptt_smoke
+
+      - name: Start the panel simulator
+        working-directory: overlay/sim
+        run: |
+          uvicorn server:app --host 127.0.0.1 --port 8765 > "$RUNNER_TEMP/sim.log" 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8765/ > /dev/null && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/sim.log"; exit 1
+
+      - name: Scene tests (mock mode, no LLM)
+        run: python overlay/tools/run_scenes.py --all --mode mock
