@@ -12,6 +12,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3   # config in pyproject.toml
 
+  voice:
+    name: voice pipeline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy   # VAD energy math (ships with opencv on the Pi)
+      - name: VAD, streaming LLM + TTS tests (no audio hardware / Ollama)
+        run: python tests/test_voice_pipeline.py
+
   overlay:
     name: overlay checks + scene tests
     runs-on: ubuntu-latest

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from typing import Optional
 
@@ -28,6 +29,9 @@ log = logging.getLogger("scenario.llm")
 
 OLLAMA_DEFAULT_URL = "http://localhost:11434"
 DEFAULT_MODEL = "qwen2.5:14b"
+# How long Ollama keeps the model loaded after a request (its default is 5m,
+# after which the next turn pays a full cold load of a ~9GB model).
+KEEP_ALIVE = os.environ.get("MINI_AI_KEEP_ALIVE", "30m")
 
 # Cap how many model-tool iterations one turn may take. Generous so simple
 # scenarios with 3-4 sequential tool calls don't get truncated.
@@ -143,6 +147,7 @@ def _ollama_chat(url, model, messages, tools, *, temperature, timeout):
         "messages": messages,
         "tools": tools,
         "stream": False,
+        "keep_alive": KEEP_ALIVE,
         "options": {"temperature": temperature},
     }
     r = requests.post(f"{url}/api/chat", json=payload, timeout=timeout)
