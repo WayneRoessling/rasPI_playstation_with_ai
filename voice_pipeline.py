@@ -30,6 +30,9 @@ import json
 import threading
 import traceback
 import urllib.request
+import wave
+from collections import deque
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from queue import Queue
 
@@ -72,6 +75,32 @@ OVERLAY_SCENARIO_ID = os.environ.get("MINI_AI_OVERLAY_SCENARIO", "space_command_
 OVERLAY_HAL_URL = os.environ.get("MINI_AI_OVERLAY_HAL", "ws://127.0.0.1:8765/hal")
 OVERLAY_MODEL = os.environ.get("MINI_AI_OVERLAY_MODEL", "qwen2.5:14b")
 OVERLAY_PTT_MAX_SECS = int(os.environ.get("MINI_AI_OVERLAY_PTT_MAX", "30"))
+
+# ── Latency knobs ─────────────────────────────────────────────────────────────
+#   MINI_AI_KEEP_ALIVE=<dur>        how long Ollama keeps a model loaded after a
+#                                   request (Ollama's own default is 5m)
+#   MINI_AI_VAD=0                   disable end-of-speech detection and record a
+#                                   fixed 10s window instead
+#   MINI_AI_VAD_SILENCE_MS=<ms>     trailing silence that ends an utterance
+#   MINI_AI_VAD_THRESHOLD=<rms>     fixed speech threshold (int16 RMS); default
+#                                   is calibrated from the room noise each turn
+#   MINI_AI_MAX_UTTERANCE=<secs>    hard cap on one utterance
+KEEP_ALIVE = os.environ.get("MINI_AI_KEEP_ALIVE", "30m")
+VAD_ENABLED = os.environ.get("MINI_AI_VAD", "1").lower() not in ("0", "false", "no")
+VAD_SILENCE_MS = int(os.environ.get("MINI_AI_VAD_SILENCE_MS", "800"))
+VAD_FIXED_THRESHOLD = float(os.environ.get("MINI_AI_VAD_THRESHOLD", "0"))
+MAX_UTTERANCE_SECS = int(os.environ.get("MINI_AI_MAX_UTTERANCE", "15"))
+LISTEN_WINDOW_SECS = 10       # wait this long for speech to start, then listen again
+
+VAD_RATE = 16000              # record straight at Whisper's rate: no resample step
+VAD_FRAME_MS = 30
+VAD_FRAME_BYTES = VAD_RATE * VAD_FRAME_MS // 1000 * 2    # 16-bit mono
+VAD_CALIBRATE_MS = 300        # opening window used to measure room noise
+VAD_NOISE_FACTOR = 3.0        # speech = this much louder than the room noise...
+VAD_MIN_RMS = 300.0           # ...but never below this floor...
+VAD_MAX_RMS = 2500.0          # ...or above this ceiling (if someone talks during calibration)
+VAD_MIN_SPEECH_MS = 150       # voiced run needed to count as speech (ignores clicks)
+VAD_PREROLL_MS = 300          # audio kept from before speech started
 
 # USB audio card is resolved lazily at first use (card number can shift on reboot)
 _audio_card: str | None = None
@@ -212,6 +241,96 @@ def record_utterance(duration_secs: int = 5) -> str:
     return tmp16
 
 
+def _frame_rms(frame: bytes) -> float:
+    import numpy as np   # ships with opencv in the venv
+    samples = np.frombuffer(frame, dtype=np.int16).astype(np.float32)
+    return float(np.sqrt(np.mean(samples * samples))) if samples.size else 0.0
+
+
+def _vad_segment(frames: Iterable[bytes], *, listen_secs: float = LISTEN_WINDOW_SECS,
+                 max_secs: float = MAX_UTTERANCE_SECS,
+                 silence_ms: int = VAD_SILENCE_MS,
+                 fixed_threshold: float = VAD_FIXED_THRESHOLD) -> bytes | None:
+    """Energy-based end-of-speech detection over 16-bit mono PCM frames.
+
+    Calibrates a speech threshold from the first VAD_CALIBRATE_MS of room
+    noise, waits up to ``listen_secs`` for speech, then returns the utterance
+    (plus a short pre-roll so the first syllable isn't clipped) once
+    ``silence_ms`` of quiet follows it, or ``max_secs`` elapse. Returns None
+    if nobody spoke. Pure function of the frames so it can be tested offline.
+    """
+    calib_frames = VAD_CALIBRATE_MS // VAD_FRAME_MS
+    preroll: deque[bytes] = deque(maxlen=VAD_PREROLL_MS // VAD_FRAME_MS)
+    noise: list[float] = []
+    threshold = fixed_threshold or VAD_MIN_RMS
+    voiced_run = 0
+    speech: list[bytes] | None = None
+    started_at = 0
+    silence_run = 0
+
+    for n, frame in enumerate(frames, start=1):
+        rms = _frame_rms(frame)
+        if speech is None:
+            preroll.append(frame)
+            if not fixed_threshold and n <= calib_frames:
+                noise.append(rms)
+                if n == calib_frames:
+                    threshold = min(VAD_MAX_RMS, max(VAD_MIN_RMS, VAD_NOISE_FACTOR * sum(noise) / len(noise)))
+                continue
+            voiced_run = voiced_run + 1 if rms >= threshold else 0
+            if voiced_run * VAD_FRAME_MS >= VAD_MIN_SPEECH_MS:
+                speech = list(preroll)
+                started_at = n
+            elif n * VAD_FRAME_MS >= listen_secs * 1000:
+                return None
+        else:
+            speech.append(frame)
+            silence_run = silence_run + 1 if rms < threshold else 0
+            if silence_run * VAD_FRAME_MS >= silence_ms:
+                break
+            if (n - started_at) * VAD_FRAME_MS >= max_secs * 1000:
+                break
+    return b"".join(speech) if speech else None
+
+
+def record_until_silence(stop: threading.Event | None = None) -> str | None:
+    """Record until the speaker stops talking; return a 16 kHz mono WAV path.
+
+    Returns None if nobody started speaking within LISTEN_WINDOW_SECS (or
+    ``stop`` was set), so the caller can simply listen again.
+    """
+    proc = subprocess.Popen(
+        ["arecord", "-D", _get_audio_card(), "-q",
+         "-f", "S16_LE", "-r", str(VAD_RATE), "-c", "1", "-t", "raw"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+    )
+
+    def _frames():
+        while stop is None or not stop.is_set():
+            chunk = proc.stdout.read(VAD_FRAME_BYTES)
+            if len(chunk) < VAD_FRAME_BYTES:   # EOF: arecord died (device gone?)
+                proc.wait(timeout=2.0)
+                raise RuntimeError(f"arecord stopped unexpectedly (exit {proc.returncode})")
+            yield chunk
+
+    try:
+        pcm = _vad_segment(_frames())
+    finally:
+        _stop_arecord(proc)
+        proc.stdout.close()
+    if pcm is None:
+        return None
+
+    tmp = tempfile.NamedTemporaryFile(suffix="_16k.wav", delete=False)
+    tmp.close()
+    with wave.open(tmp.name, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(VAD_RATE)
+        w.writeframes(pcm)
+    return tmp.name
+
+
 def capture_image() -> str:
     """Capture a frame from the USB camera."""
     cap = cv2.VideoCapture(CAMERA_INDEX)
@@ -239,9 +358,13 @@ def transcribe(wav_path: str) -> str:
     return " ".join(lines)
 
 
-def ask_llm(prompt: str, text_model: str, vision_model: str,
-            system_prompt: str = "", image_path: str = None) -> str:
-    """Send prompt to Ollama via /api/chat, injecting the system prompt if set."""
+def stream_llm(prompt: str, text_model: str, vision_model: str,
+               system_prompt: str = "", image_path: str | None = None) -> Iterator[str]:
+    """Send prompt to Ollama via /api/chat and yield the reply as it's generated.
+
+    The request (including reading ``image_path``) happens before this
+    returns, so the caller may delete the image straight away.
+    """
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
@@ -255,14 +378,121 @@ def ask_llm(prompt: str, text_model: str, vision_model: str,
         messages.append({"role": "user", "content": prompt})
         model = text_model
 
-    data = json.dumps({"model": model, "messages": messages, "stream": False}).encode()
+    data = json.dumps({"model": model, "messages": messages, "stream": True,
+                       "keep_alive": KEEP_ALIVE}).encode()
     req = urllib.request.Request(
         f"{OLLAMA_URL}/chat", data=data, headers={"Content-Type": "application/json"}
     )
     # Vision cold-start can take 5+ minutes on CPU-only Pi 5; text is much faster.
     timeout = 600 if image_path else 300
-    resp = urllib.request.urlopen(req, timeout=timeout)
-    return json.loads(resp.read())["message"]["content"]
+    return _iter_chat_stream(urllib.request.urlopen(req, timeout=timeout))
+
+
+def _iter_chat_stream(resp) -> Iterator[str]:
+    """Yield message deltas from Ollama's newline-delimited JSON stream."""
+    with resp:
+        for line in resp:
+            if not line.strip():
+                continue
+            chunk = json.loads(line)
+            if "error" in chunk:
+                raise RuntimeError(f"Ollama: {chunk['error']}")
+            piece = chunk.get("message", {}).get("content", "")
+            if piece:
+                yield piece
+            if chunk.get("done"):
+                return
+
+
+def ask_llm(prompt: str, text_model: str, vision_model: str,
+            system_prompt: str = "", image_path: str | None = None) -> str:
+    """Whole-reply convenience wrapper around stream_llm()."""
+    return "".join(stream_llm(prompt, text_model, vision_model, system_prompt, image_path))
+
+
+def warm_up(model: str) -> None:
+    """Load ``model`` into Ollama's memory ahead of the first question.
+
+    An empty /api/generate request just loads the model; keep_alive then
+    holds it resident between turns.
+    """
+    data = json.dumps({"model": model, "keep_alive": KEEP_ALIVE}).encode()
+    req = urllib.request.Request(
+        f"{OLLAMA_URL}/generate", data=data, headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=600) as resp:
+        resp.read()
+
+
+def _warm_up_in_background(model: str, status_q: Queue | None) -> None:
+    def _run() -> None:
+        try:
+            warm_up(model)
+        except Exception as e:
+            _emit(status_q, "error", f"Could not preload {model}: {e}")
+    threading.Thread(target=_run, daemon=True, name="ollama-warmup").start()
+
+
+# Split after sentence punctuation followed by whitespace, or at line breaks.
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+|\n+")
+
+
+def _sentences(pieces: Iterable[str], min_chars: int = 20) -> Iterator[str]:
+    """Regroup streamed text into sentences for TTS.
+
+    ``min_chars`` keeps very short fragments ("Hi.", "Dr.") glued to the
+    next sentence so Piper isn't started for a syllable at a time.
+    """
+    buf = ""
+    for piece in pieces:
+        buf += piece
+        while (m := _SENTENCE_END.search(buf, min_chars)) is not None:
+            sentence, buf = buf[:m.start()].strip(), buf[m.end():]
+            if sentence:
+                yield sentence
+    if buf.strip():
+        yield buf.strip()
+
+
+def _speak_streamed(sentences: Iterable[str], state: RuntimeState,
+                    status_q: Queue | None) -> str:
+    """Speak sentences as they arrive while the LLM keeps generating.
+
+    A worker thread synthesizes/plays each sentence in order, so the first
+    one is heard as soon as it's complete instead of after the whole reply.
+    Returns the full text. Re-reads voice/gain per sentence so a GUI change
+    mid-reply is honored.
+    """
+    q: Queue[str | None] = Queue()
+    errors: list[BaseException] = []
+
+    def _worker() -> None:
+        first = True
+        while (sentence := q.get()) is not None:
+            if errors:
+                continue            # playback failed — drain without speaking
+            if first:
+                _emit(status_q, "status", "Speaking")
+                first = False
+            _, _, voice, gain, _ = state.snapshot()
+            try:
+                speak(sentence, voice, gain)
+            except BaseException as e:
+                errors.append(e)
+
+    worker = threading.Thread(target=_worker, daemon=True, name="tts")
+    worker.start()
+    parts: list[str] = []
+    try:
+        for sentence in sentences:
+            parts.append(sentence)
+            q.put(sentence)
+    finally:
+        q.put(None)
+        worker.join()
+    if errors:
+        raise errors[0]
+    return " ".join(parts)
 
 
 def speak(text: str, voice: Voice, volume_gain: float) -> None:
@@ -303,8 +533,14 @@ def speak(text: str, voice: Voice, volume_gain: float) -> None:
 
 def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
     """One conversation turn — reads live state for every step."""
-    _emit(status_q, "status", "Listening (10s)")
-    wav = record_utterance(10)
+    if VAD_ENABLED:
+        _emit(status_q, "status", "Listening")
+        wav = record_until_silence(state.stop)
+        if wav is None:
+            return          # nobody spoke — the loop just listens again
+    else:
+        _emit(status_q, "status", "Listening (10s)")
+        wav = record_utterance(10)
 
     _emit(status_q, "status", "Transcribing")
     try:
@@ -327,21 +563,18 @@ def run_voice_turn(state: RuntimeState, status_q: Queue | None = None) -> None:
 
     _emit(status_q, "status", "Thinking")
     try:
-        response = ask_llm(
+        pieces = stream_llm(
             user_text, text_model, vision_model,
             system_prompt=personality.system_prompt,
             image_path=image_path,
         )
     finally:
-        if image_path:
-            os.unlink(image_path)
+        _unlink_quiet(image_path)
 
+    # Speak each sentence as soon as it's generated rather than waiting for
+    # the whole reply; voice/gain are re-read per sentence.
+    response = _speak_streamed(_sentences(pieces), state, status_q)
     _emit(status_q, "asst", response)
-
-    # Re-snapshot voice/gain so a mid-turn GUI change is honored
-    _, _, voice, gain, _ = state.snapshot()
-    _emit(status_q, "status", "Speaking")
-    speak(response, voice, gain)
     _emit(status_q, "status", "Pausing")
     state.stop.wait(3.0)   # 3s grace period before listening again
     _emit(status_q, "status", "Idle")
@@ -569,6 +802,9 @@ def _run_overlay_loop(state: RuntimeState, status_q: Queue | None) -> None:
 
 def run_loop(state: RuntimeState, status_q: Queue | None = None) -> None:
     """Run conversation turns until state.stop is set or KeyboardInterrupt."""
+    # Load the model while the first utterance is being recorded, so the
+    # first answer doesn't also pay the model's cold-load time.
+    _warm_up_in_background(OVERLAY_MODEL if OVERLAY_ENABLED else state.text_model, status_q)
     if OVERLAY_ENABLED:
         _emit(status_q, "status",
               f"Overlay mode ({OVERLAY_SCENARIO_ID}) — set MINI_AI_OVERLAY= to disable")

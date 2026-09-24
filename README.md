@@ -29,7 +29,9 @@ browser-based panel simulator. The physical panel build is in progress (see the
 ```
 
 - **Plain voice assistant** (`voice_pipeline.py`, default): listen → transcribe →
-  answer → speak. Say "what do you see" to send a webcam frame to a vision model.
+  answer → speak. Recording stops when you stop talking, and the answer is spoken
+  sentence by sentence while the model is still generating it. Say "what do you
+  see" to send a webcam frame to a vision model.
 - **Scenario console** (`MINI_AI_OVERLAY=true`): push-to-talk from the panel, and
   the LLM drives the panel through scenario-specific tools. Dangerous actions are
   arm-gated behind the physical key switch. See [`overlay/README.md`](overlay/README.md).
@@ -121,6 +123,7 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 ├── check_state.py           quick Pi diagnostics
 ├── test_pi_state.py         13-point health check
 ├── test_e2e_pipeline.py     end-to-end pipeline test (runs on the Pi)
+├── tests/                   offline tests (run in CI, no hardware needed)
 ├── phase2_os_setup.py       standalone phase 2 (superseded by setup_all.py)
 ├── repair_pi_rootfs.sh      WSL2 rootfs repair (SD-card era)
 ├── active_plans/            PLAN-MAI-001..003 (003 is current)
@@ -138,6 +141,7 @@ python -m overlay.scenario.demo --repl                # from the repo root; need
 | Saved preset / voice / personality / volume (Pi) | `~/.config/mini-ai/config.json`, set via the desktop pickers |
 | One-off overrides (Pi) | `MINI_AI_PRESET`, `MINI_AI_TEXT_MODEL`, `MINI_AI_VISION_MODEL`, `MINI_AI_VOICE`, `MINI_AI_VOLUME`, `MINI_AI_PERSONALITY` |
 | Scenario console (Pi) | `MINI_AI_OVERLAY=true`, `MINI_AI_OVERLAY_SCENARIO`, `MINI_AI_OVERLAY_HAL`, `MINI_AI_OVERLAY_MODEL` |
+| Responsiveness (Pi) | `MINI_AI_KEEP_ALIVE` (how long models stay loaded, default `30m`), `MINI_AI_VAD=0` (fixed 10s recording instead of stop-on-silence), `MINI_AI_VAD_SILENCE_MS` (default 800), `MINI_AI_VAD_THRESHOLD` (fixed mic threshold), `MINI_AI_MAX_UTTERANCE` (default 15s) |
 
 For convenient access, add an `~/.ssh/config` entry on the workstation:
 
