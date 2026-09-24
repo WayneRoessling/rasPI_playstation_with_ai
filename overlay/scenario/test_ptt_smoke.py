@@ -187,11 +187,61 @@ def test_safety_cap_path():
     print(f"  safety_cap:    OK  ({elapsed:.2f}s, terminate={proc.terminate_calls})")
 
 
+def test_stop_while_waiting():
+    """GUI stop while waiting for a press returns None without recording."""
+    import voice_pipeline as vp
+
+    stop = threading.Event()
+    stop.set()
+    with mock.patch.object(vp, "_start_arecord") as start:
+        out = vp._record_ptt_gated(FakeHal(), status_q=None, max_secs=5, stop=stop)
+    assert out is None, f"expected None, got {out!r}"
+    assert not start.called, "arecord started despite stop"
+    print("  stop_waiting:  OK")
+
+
+def test_disconnect_while_waiting():
+    """A dropped HAL link surfaces as ConnectionError so the loop can reconnect."""
+    import voice_pipeline as vp
+
+    hal = FakeHal()
+    hal.state = lambda: {"ptt": 0, "connected": False}
+    try:
+        vp._record_ptt_gated(hal, status_q=None, max_secs=5)
+    except ConnectionError:
+        print("  disconnect:    OK")
+        return
+    raise AssertionError("no ConnectionError on disconnected HAL")
+
+
+def test_hal_detects_transport_drop():
+    """HalClient flips `connected` to False when its transport drops."""
+    from overlay.pi5_hal.client import HalClient
+    from overlay.pi5_hal.transport import MockTransport
+
+    transport = MockTransport()
+    hal = HalClient(transport)
+    hal.connect(send_sync=False)
+    assert hal.state()["connected"]
+    transport.close()   # simulate the link dying underneath the client
+    deadline = time.monotonic() + 2.0
+    while hal.state()["connected"] and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert not hal.state()["connected"], "HalClient still reports connected"
+    hal.connect(send_sync=False)   # reconnect on the same client
+    assert hal.state()["connected"], "reconnect failed"
+    hal.disconnect()
+    print("  hal_drop:      OK")
+
+
 def main() -> int:
     print("PTT streaming-recording smoke test")
     try:
         test_release_path()
         test_safety_cap_path()
+        test_stop_while_waiting()
+        test_disconnect_while_waiting()
+        test_hal_detects_transport_drop()
     except AssertionError as exc:
         print(f"FAIL: {exc}")
         return 1

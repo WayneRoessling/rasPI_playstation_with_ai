@@ -194,7 +194,7 @@ class ControlPanel:
         if self._test_thread is not None and self._test_thread.is_alive():
             return
         self.test_btn.config(state=tk.DISABLED)
-        _, _, voice, gain = self.state.snapshot()
+        _, _, voice, gain, _ = self.state.snapshot()
 
         def _run() -> None:
             try:
