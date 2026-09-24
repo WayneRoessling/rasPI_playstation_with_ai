@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Mini-AI Full Setup — Phases 1-7
+Mini-AI Full Setup — Phases 2-8
 
 Runs all setup phases on a freshly flashed Pi in one shot.
 Prerequisites:
-  1. Pi flashed with Bookworm Lite 64-bit and booted
-  2. SSH key pushed (run push_key.py first)
-  3. .env configured with PI host/user/key
+  1. Pi imaged with Raspberry Pi OS 64-bit (Imager preconfigures hostname,
+     Wi-Fi and the SSH public key — see PLAN-MAI-003 Phase B) and booted
+  2. .env configured with PI host/user/key
 
 Usage:
   python setup_all.py              # run all phases
   python setup_all.py --from 4     # resume from phase 4
-  python setup_all.py --only 3     # run only phase 3
+  python setup_all.py --only 8     # run only phase 8 (redeploy app code)
 """
 
 import argparse
@@ -19,7 +19,18 @@ import sys
 import time
 import os
 
-from pi_ssh import connect, run, gate, get_config, get_password, connect_password
+from pi_ssh import connect, run as _run, gate, get_config, get_password, connect_password
+from mini_ai_config import PRESETS, VOICES, load_preset
+
+REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Ollama model for the overlay tool-use loop (see voice_pipeline.OVERLAY_MODEL).
+OVERLAY_MODEL = os.environ.get("MINI_AI_OVERLAY_MODEL", "qwen2.5:14b")
+
+
+def run(c, cmd, **kwargs):
+    """pi_ssh.run with pipefail on, so a failing `cmd | tail -N` aborts the phase."""
+    return _run(c, cmd, pipefail=True, **kwargs)
 
 
 def _repush_key():
@@ -40,7 +51,12 @@ def _repush_key():
             "chmod 600 ~/.ssh/authorized_keys",
         ]
         for cmd in cmds:
-            c.exec_command(cmd)
+            _, stdout, _ = c.exec_command(cmd)
+            # Block until the command finishes — closing the transport early can
+            # cut off the authorized_keys write.
+            code = stdout.channel.recv_exit_status()
+            if code != 0:
+                raise RuntimeError(f"`{cmd.split()[0]}` exited {code}")
         t.close()
         print("  SSH key re-pushed OK")
     except Exception as e:
@@ -155,10 +171,10 @@ def phase3(c):
     # Test capture
     run(c, "mkdir -p ~/tests/camera")
     run(c, '~/mini-ai/.venv/bin/python -c "'
-        'import cv2; cap=cv2.VideoCapture(0); '
+        'import cv2, os; cap=cv2.VideoCapture(0); '
         'cap.set(3,1920); cap.set(4,1080); '
         'r,f=cap.read(); cap.release(); '
-        'cv2.imwrite(\\\"/home/miniai_admin/tests/camera/test_still.jpg\\\",f); '
+        'cv2.imwrite(os.path.expanduser(\\\"~/tests/camera/test_still.jpg\\\"),f); '
         'print(f\\\"Captured: {f.shape}\\\")'
         '" 2>&1', label="capture test image")
 
@@ -211,30 +227,46 @@ def phase4(c):
     _, out = run(c, "curl -s http://localhost:11434/api/tags", label="check ollama API", abort_on_fail=False)
 
     # Pull models (need wlan0 route)
-    _, models = run(c, "ollama list 2>&1", label="list models", abort_on_fail=False)
+    models = _ollama_models()
+    _, listing = run(c, "ollama list 2>&1", label="list models", abort_on_fail=False)
 
-    if "llama3.2:3b" not in models:
+    for model in models:
+        if _has_model(listing, model):
+            continue
         ensure_wlan0_default(c)
-        run(c, "ollama pull llama3.2:3b 2>&1 | tail -5", timeout=1800, label="pull llama3.2:3b")
-        restore_eth0_default(c)
-
-    if "llava:7b" not in models:
-        ensure_wlan0_default(c)
-        run(c, "ollama pull llava:7b 2>&1 | tail -5", timeout=3600, label="pull llava:7b")
+        run(c, f"ollama pull {model} 2>&1 | tail -5", timeout=3600, label=f"pull {model}")
         restore_eth0_default(c)
 
     # Verify
-    _, out = run(c, "ollama list 2>&1", label="verify models")
-    gate("llama3.2:3b" in out, "llama3.2:3b present")
-    gate("llava:7b" in out, "llava:7b present")
+    _, listing = run(c, "ollama list 2>&1", label="verify models")
+    for model in models:
+        gate(_has_model(listing, model), f"{model} present")
 
-    # Quick text test
-    _, out = run(c, """curl -s http://localhost:11434/api/generate -d '{"model":"llama3.2:3b","prompt":"2+2=","stream":false}' 2>&1""",
+    # Quick text test against the active preset's text model
+    text_model = load_preset().text_model
+    _, out = run(c, "curl -s http://localhost:11434/api/generate "
+                 f"""-d '{{"model":"{text_model}","prompt":"2+2=","stream":false}}' 2>&1""",
                  timeout=120, label="text inference test")
     gate('"response"' in out, "text inference works")
 
     print("\n  PHASE 4 COMPLETE")
     return c
+
+
+def _ollama_models():
+    """Active preset first, then every model the picker can switch to, then the overlay model."""
+    active = load_preset()
+    candidates = [active.text_model, active.vision_model]
+    for p in PRESETS:
+        candidates += [p.text_model, p.vision_model]
+    candidates.append(OVERLAY_MODEL)
+    return list(dict.fromkeys(candidates))
+
+
+def _has_model(listing, model):
+    """True if `ollama list` output contains model (bare names match `:latest`)."""
+    names = {line.split()[0] for line in listing.splitlines()[1:] if line.strip()}
+    return model in names or f"{model}:latest" in names
 
 
 # ── Phase 5: Audio ────────────────────────────────────────────────────────────
@@ -294,18 +326,20 @@ def phase6(c):
             timeout=300, label="install piper")
         restore_eth0_default(c)
 
-    # Download voice
-    _, voice = run(c, "test -f ~/piper-voices/en_US-lessac-medium.onnx && echo EXISTS || echo MISSING",
-                   label="check piper voice", abort_on_fail=False)
-    if "MISSING" in voice:
+    # Download every voice the picker offers (mini_ai_config.VOICES)
+    run(c, "mkdir -p ~/piper-voices")
+    for v in VOICES:
+        _, voice = run(c, f"test -f ~/piper-voices/{v.file}.onnx.json && echo EXISTS || echo MISSING",
+                       label=f"check piper voice {v.key}", abort_on_fail=False)
+        if "MISSING" not in voice:
+            continue
         ensure_wlan0_default(c)
-        run(c, "mkdir -p ~/piper-voices")
-        run(c, "curl -fSL -o ~/piper-voices/en_US-lessac-medium.onnx "
-            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx 2>&1 | tail -3",
-            timeout=120, label="download onnx model")
-        run(c, "curl -fSL -o ~/piper-voices/en_US-lessac-medium.onnx.json "
-            "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json 2>&1 | tail -3",
-            timeout=60, label="download onnx config")
+        # Download to .part and rename so an interrupted run never leaves a truncated model.
+        for ext, timeout in ((".onnx", 300), (".onnx.json", 60)):
+            dest = f"~/piper-voices/{v.file}{ext}"
+            run(c, f"curl -fSL -o {dest}.part {_piper_voice_url(v.file)}{ext} 2>&1 | tail -3 "
+                f"&& mv {dest}.part {dest}",
+                timeout=timeout, label=f"download {v.file}{ext}")
         restore_eth0_default(c)
 
     # 6.3 Install ollama python package
@@ -333,6 +367,15 @@ def phase6(c):
     return c
 
 
+def _piper_voice_url(file):
+    """HF URL (sans extension) for a Piper voice, e.g. en_GB-jenny_dioco-medium ->
+    .../en/en_GB/jenny_dioco/medium/en_GB-jenny_dioco-medium"""
+    locale, name, quality = file.split("-")
+    lang = locale.split("_")[0]
+    return (f"https://huggingface.co/rhasspy/piper-voices/resolve/main/"
+            f"{lang}/{locale}/{name}/{quality}/{file}")
+
+
 # ── Phase 7: VSCode Dev ──────────────────────────────────────────────────────
 
 def phase7(c):
@@ -342,9 +385,9 @@ def phase7(c):
 
     # Create .vscode settings
     run(c, "mkdir -p ~/mini-ai/.vscode")
-    run(c, """cat > ~/mini-ai/.vscode/settings.json << 'EOF'
+    run(c, """cat > ~/mini-ai/.vscode/settings.json << EOF
 {
-    "python.defaultInterpreterPath": "/home/miniai_admin/mini-ai/.venv/bin/python",
+    "python.defaultInterpreterPath": "$HOME/mini-ai/.venv/bin/python",
     "editor.formatOnSave": true,
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff"
@@ -372,18 +415,95 @@ EOF""", label="write requirements.txt")
     return c
 
 
+# ── Phase 8: Deploy app ──────────────────────────────────────────────────────
+
+# Everything voice_pipeline.py / mini_ai_panel.py import at runtime, plus the
+# desktop launchers. Paths are relative to the repo root and to ~/mini-ai.
+DEPLOY_FILES = ["voice_pipeline.py", "mini_ai_config.py", "mini_ai_panel.py", "test_e2e_pipeline.py"]
+DEPLOY_DIRS = ["overlay", "desktop"]
+DEPLOY_SKIP_DIRS = {"__pycache__", "dev_assets", "node_modules"}
+DEPLOY_REQUIREMENTS = ["overlay/scenario/requirements.txt", "overlay/pi5_hal/requirements.txt"]
+
+
+def _deploy_paths():
+    paths = list(DEPLOY_FILES)
+    for top in DEPLOY_DIRS:
+        for root, dirs, files in os.walk(os.path.join(REPO_DIR, top)):
+            dirs[:] = [d for d in dirs if d not in DEPLOY_SKIP_DIRS and not d.startswith(".")]
+            rel_root = os.path.relpath(root, REPO_DIR).replace(os.sep, "/")
+            paths += [f"{rel_root}/{f}" for f in files if not f.endswith(".pyc")]
+    return paths
+
+
+def phase8(c):
+    print("\n" + "=" * 60)
+    print("  PHASE 8 — Deploy app code")
+    print("=" * 60)
+
+    _, home = run(c, "echo $HOME", label="remote home")
+    dest = home.strip() + "/mini-ai"
+    paths = _deploy_paths()
+
+    remote_dirs = sorted({f"{dest}/{os.path.dirname(rel)}".rstrip("/") for rel in paths})
+    run(c, "mkdir -p " + " ".join(f"'{d}'" for d in remote_dirs), label="create app dirs")
+
+    sftp = c.open_sftp()
+    for rel in paths:
+        sftp.put(os.path.join(REPO_DIR, rel), f"{dest}/{rel}")
+    sftp.close()
+    print(f"  Uploaded {len(paths)} files to {dest}")
+
+    run(c, "chmod +x ~/mini-ai/voice_pipeline.py ~/mini-ai/mini_ai_panel.py ~/mini-ai/desktop/*.py "
+        "~/mini-ai/desktop/*.sh", label="mark scripts executable")
+
+    ensure_wlan0_default(c)
+    reqs = " ".join(f"-r ~/mini-ai/{r}" for r in DEPLOY_REQUIREMENTS)
+    run(c, f"~/mini-ai/.venv/bin/pip install --no-cache-dir {reqs} 2>&1 | tail -5",
+        timeout=300, label="install overlay deps")
+    restore_eth0_default(c)
+
+    # Gate: every runtime import resolves inside the venv
+    _, out = run(c, "cd ~/mini-ai && .venv/bin/python -c "
+                 "'import mini_ai_config, yaml, requests, websocket; "
+                 "from overlay.scenario.demo import SCENARIOS; print(\"IMPORTS_OK\", len(SCENARIOS))'",
+                 label="verify imports")
+    gate("IMPORTS_OK" in out, "app imports resolve on the Pi")
+
+    print("\n  PHASE 8 COMPLETE")
+    return c
+
+
 # ── Network helpers ───────────────────────────────────────────────────────────
 
+# The eth0 default route (as printed by `ip route show default dev eth0`) that
+# ensure_wlan0_default() removed and restore_eth0_default() must put back.
+_removed_eth0_route = None
+
+
 def ensure_wlan0_default(c):
-    """Swap default route to wlan0 for external downloads."""
-    run(c, "sudo ip route del default via 192.168.99.1 dev eth0 2>&1 || true",
-        label="route -> wlan0", abort_on_fail=False)
+    """Drop the eth0 default route (if any) so external downloads go via wlan0.
+
+    The route is read from the Pi rather than hardcoded, so this works on any
+    LAN / DHCP gateway. No eth0 default route -> nothing to do.
+    """
+    global _removed_eth0_route
+    if _removed_eth0_route:
+        return
+    _, out = run(c, "ip route show default dev eth0", label="eth0 default route", abort_on_fail=False)
+    route = out.strip().splitlines()[0] if out.strip() else ""
+    if not route:
+        return
+    run(c, f"sudo ip route del {route} dev eth0", label="route -> wlan0")
+    _removed_eth0_route = route
 
 
 def restore_eth0_default(c):
-    """Restore eth0 as default route."""
-    run(c, "sudo ip route add default via 192.168.99.1 dev eth0 metric 100 2>&1 || true",
-        label="route -> eth0", abort_on_fail=False)
+    """Put back the eth0 default route removed by ensure_wlan0_default()."""
+    global _removed_eth0_route
+    if not _removed_eth0_route:
+        return
+    run(c, f"sudo ip route replace {_removed_eth0_route} dev eth0", label="route -> eth0")
+    _removed_eth0_route = None
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -395,6 +515,7 @@ PHASES = {
     5: ("Audio Devices", phase5),
     6: ("Speech Pipeline", phase6),
     7: ("VSCode Dev", phase7),
+    8: ("Deploy App", phase8),
 }
 
 

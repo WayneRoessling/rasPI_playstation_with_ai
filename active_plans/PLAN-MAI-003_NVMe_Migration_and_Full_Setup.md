@@ -166,22 +166,25 @@ cd 77_projects/customer/projects/Mini-AI
 
 # .env should already point at 192.168.99.103 with SSH key path
 
-# Run all setup phases (2-7)
+# Run all setup phases (2-8). Phase 8 uploads the app code
+# (voice_pipeline.py, mini_ai_config.py, mini_ai_panel.py, overlay/, desktop/,
+# test_e2e_pipeline.py) to ~/mini-ai and installs its Python deps.
 python setup_all.py
 
 # Health check
 python test_pi_state.py
 # Expected: 13/13 checks pass
 
-# Deploy pipeline scripts to the Pi
-scp -i ~/.ssh/id_ed25519_mini_ai voice_pipeline.py miniai_admin@192.168.99.103:~/mini-ai/
-scp -i ~/.ssh/id_ed25519_mini_ai test_e2e_pipeline.py miniai_admin@192.168.99.103:/tmp/
-
 # Run E2E test
-ssh -i ~/.ssh/id_ed25519_mini_ai miniai_admin@192.168.99.103 \
-  '~/mini-ai/.venv/bin/python /tmp/test_e2e_pipeline.py'
+ssh mini-ai '~/mini-ai/.venv/bin/python ~/mini-ai/test_e2e_pipeline.py'
 # Expected: All 5 stages pass
 ```
+
+After changing app code on the workstation, redeploy with `python setup_all.py --only 8`.
+
+Phase 4 pulls every model any preset can switch to (`mini_ai_config.PRESETS`) plus
+the overlay model (`MINI_AI_OVERLAY_MODEL`, default `qwen2.5:14b`, ~9GB); phase 6
+downloads every Piper voice in `mini_ai_config.VOICES`.
 
 ---
 
@@ -216,8 +219,8 @@ These were made during the PLAN-MAI-002 attempt and remain valid:
 | Phase B: Image NVMe via USB enclosure | 10 min |
 | Phase C: Boot Pi from USB-NVMe | 5 min |
 | Phase D: First boot verification | 5 min |
-| Phase E: `setup_all.py` (Phases 2-7) | 30-60 min |
-| Pipeline deploy + E2E test | 5 min |
+| Phase E: `setup_all.py` (Phases 2-8, incl. ~20GB of models) | 45-90 min |
+| E2E test | 5 min |
 | **Total** | **~75-105 min** |
 
 ---
@@ -232,7 +235,7 @@ These were made during the PLAN-MAI-002 attempt and remain valid:
 - [ ] `vcgencmd get_throttled` returns `0x0` (no undervoltage)
 - [ ] `file /var/lib/dpkg/status` returns `ASCII text` (not `data`)
 - [ ] OS edition matches the working SanDisk install
-- [ ] `setup_all.py` completes all phases 2-7 without intervention
+- [ ] `setup_all.py` completes all phases 2-8 without intervention
 - [ ] `test_pi_state.py` — 13/13 checks pass
 - [ ] `test_e2e_pipeline.py` — all 5 stages pass
 - [ ] Live voice pipeline test: speak → hear response

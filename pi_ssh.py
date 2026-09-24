@@ -106,15 +106,18 @@ def connect_password(host, user, password):
 
 # ── Command execution ─────────────────────────────────────────────────────────
 
-def run(client, cmd, timeout=120, label=None, abort_on_fail=True):
+def run(client, cmd, timeout=120, label=None, abort_on_fail=True, pipefail=False):
     """Run a command over SSH, stream output, return (exit_code, stdout_text).
 
     Aborts the script on non-zero exit when abort_on_fail is True.
+    With pipefail=True, `cmd | tail -N` reports cmd's failure instead of tail's 0.
     """
     tag = label or cmd[:70]
     print(f"\n{'─' * 60}")
     print(f"  {tag}")
     print(f"{'─' * 60}")
+    if pipefail:
+        cmd = "set -o pipefail; " + cmd
     _, stdout, stderr = client.exec_command(cmd, timeout=timeout)
     stdout.channel.set_combine_stderr(False)
     out = ""
